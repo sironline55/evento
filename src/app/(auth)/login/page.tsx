@@ -53,10 +53,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
+      <Card className="w-full max-w-md bg-white border-0.5 border-gray-200">
         <CardHeader>
-          <CardTitle className="text-center">Sign in to your account</CardTitle>
+          <CardTitle className="text-center text-gray-900">تسجيل الدخول إلى حسابك</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -66,9 +66,9 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email address</FormLabel>
+                    <FormLabel className="text-right">البريد الإلكتروني</FormLabel>
                     <FormControl>
-                      <Input type="email" {...field} />
+                      <Input {...field} className="border-0.5" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -80,9 +80,9 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-right">كلمة المرور</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" {...field} className="border-0.5" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -93,15 +93,15 @@ export default function LoginPage() {
                 <div className="text-red-600 text-sm text-center">{error}</div>
               )}
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign in'}
+              <Button type="submit" className="w-full bg-[#2B6E64] hover:bg-[#2B6E64]/90 rounded-full" disabled={loading}>
+                {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
               </Button>
             </form>
           </Form>
 
           <div className="mt-6 text-center">
-            <Link href="/register" className="text-sm text-blue-600 hover:text-blue-500">
-              Don't have an account? Sign up
+            <Link href="/register" className="text-sm text-[#2B6E64] hover:text-[#2B6E64]/80">
+              ليس لديك حساب؟ سجل الآن
             </Link>
           </div>
         </CardContent>
