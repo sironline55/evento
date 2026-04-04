@@ -1,152 +1,115 @@
-import * as XLSX from 'xlsx';
-import { BaseService } from './BaseService';
-import { Event, EventStats, TicketType } from '../types';
+import * as XLSX from 'xlsx'
+import { createBrowserClient } from '@supabase/ssr'
+import { Event, EventStats, Registration } from '../types'
 
-export type EventCreateParams = Omit<Event, 'id' | 'createdAt' | 'updatedAt'>;
-export type EventUpdateParams = Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'account_id'>>;
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
-export class EventService extends BaseService {
-  async list(accountId: string): Promise<Event[]> {
-    const { data, error } = await this.supabase
+export type EventCreateParams = Omit<Event, 'id' | 'created_at' | 'updated_at'>
+export type EventUpdateParams = Partial<Omit<Event, 'id' | 'created_at' | 'updated_at' | 'created_by'>>
+
+export class EventService {
+  /** قائمة فعاليات المستخدم الحالي */
+  async list(userId: string): Promise<Event[]> {
+    const { data, error } = await supabase
       .from('events')
       .select('*')
-      .eq('account_id', accountId)
-      .order('date', { ascending: true });
-
-    if (error) throw error;
-    await this.logActivity(accountId, 'event.list', {});
-    return data || [];
+      .eq('created_by', userId)
+      .order('start_date', { ascending: true })
+    if (error) throw error
+    return data || []
   }
 
-  async getById(id: string, accountId: string): Promise<Event | null> {
-    const { data, error } = await this.supabase
+  /** فعالية واحدة بالـ ID */
+  async getById(id: string): Promise<Event | null> {
+    const { data, error } = await supabase
       .from('events')
       .select('*')
       .eq('id', id)
-      .eq('account_id', accountId)
-      .single();
-
-    if (error) return null;
-    await this.logActivity(accountId, 'event.getById', { eventId: id });
-    return data;
+      .single()
+    if (error) return null
+    return data
   }
 
+  /** إنشاء فعالية جديدة */
   async create(params: EventCreateParams): Promise<Event> {
-    const { data, error } = await this.supabase
+    const { data, error } = await supabase
       .from('events')
       .insert(params)
       .select()
-      .single();
-
-    if (error) throw error;
-    await this.logActivity(params.account_id, 'event.create', { eventId: data.id, title: params.title });
-    return data;
+      .single()
+    if (error) throw error
+    return data
   }
 
-  async update(id: string, accountId: string, updates: EventUpdateParams): Promise<Event> {
-    const { data, error } = await this.supabase
+  /** تحديث فعالية */
+  async update(id: string, updates: EventUpdateParams): Promise<Event> {
+    const { data, error } = await supabase
       .from('events')
-      .update(updates)
+      .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .eq('account_id', accountId)
       .select()
-      .single();
-
-    if (error) throw error;
-    await this.logActivity(accountId, 'event.update', { eventId: id, updates });
-    return data;
+      .single()
+    if (error) throw error
+    return data
   }
 
-  async delete(id: string, accountId: string): Promise<void> {
-    const { error } = await this.supabase
+  /** حذف فعالية */
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase
       .from('events')
       .delete()
       .eq('id', id)
-      .eq('account_id', accountId);
-
-    if (error) throw error;
-    await this.logActivity(accountId, 'event.delete', { eventId: id });
+    if (error) throw error
   }
 
-  async getStats(eventId: string, accountId: string): Promise<EventStats> {
-    const event = await this.getById(eventId, accountId);
-    if (!event) {
-      return {
-        eventId,
-        totalAttendees: 0,
-        checkedIn: 0,
-        registered: 0,
-        cancelled: 0,
-        revenue: 0,
-      };
-    }
+  /** إحصائيات فعالية */
+  async getStats(eventId: string): Promise<EventStats> {
+    const { data, error } = await supabase
+      .from('registrations')
+      .select('status')
+      .eq('event_id', eventId)
+    if (error) throw error
 
-    const { data, error } = await this.supabase
-      .from('attendees')
-      .select('status, ticketType')
-      .eq('eventId', eventId)
-      .order('registeredAt', { ascending: true });
-
-    if (error) throw error;
-
-    const ticketPriceMap = new Map<string, number>();
-    (event.ticketTypes || []).forEach((ticket: TicketType) => {
-      ticketPriceMap.set(ticket.label, ticket.price);
-    });
-
-    const stats = {
+    const stats: EventStats = {
       eventId,
       totalAttendees: 0,
       checkedIn: 0,
       registered: 0,
       cancelled: 0,
-      revenue: 0,
-    };
-
-    (data || []).forEach(({ status, ticketType }) => {
-      stats.totalAttendees += 1;
-
-      if (status === 'attended') {
-        stats.checkedIn += 1;
-      }
-      if (status === 'registered') {
-        stats.registered += 1;
-      }
-      if (status === 'cancelled') {
-        stats.cancelled += 1;
-      }
-
-      const price = ticketType ? ticketPriceMap.get(ticketType) ?? 0 : 0;
-      stats.revenue += price;
-    });
-
-    await this.logActivity(accountId, 'event.getStats', { eventId });
-    return stats;
+    }
+    ;(data || []).forEach(({ status }) => {
+      stats.totalAttendees += 1
+      if (status === 'attended') stats.checkedIn += 1
+      if (status === 'registered') stats.registered += 1
+      if (status === 'cancelled') stats.cancelled += 1
+    })
+    return stats
   }
 
-  async exportAttendeesExcel(eventId: string, accountId: string): Promise<ArrayBuffer> {
-    const { data, error } = await this.supabase
-      .from('attendees')
+  /** تصدير المسجلين كـ Excel */
+  async exportRegistrationsExcel(eventId: string): Promise<ArrayBuffer> {
+    const { data, error } = await supabase
+      .from('registrations')
       .select('*')
-      .eq('eventId', eventId);
+      .eq('event_id', eventId)
+    if (error) throw error
 
-    if (error) throw error;
+    const rows = (data || []).map((r: Registration) => ({
+      'الاسم': r.guest_name || '',
+      'البريد': r.guest_email || '',
+      'الجوال': r.guest_phone || '',
+      'نوع التذكرة': r.ticket_type || 'عام',
+      'الحالة': r.status,
+      'تاريخ التسجيل': r.created_at,
+      'وقت الدخول': r.checked_in_at || '',
+    }))
 
-    const rows = (data || []).map((attendee) => ({
-      Name: attendee.name || '',
-      Company: attendee.company || '',
-      'Ticket Type': attendee.ticketType || '',
-      Status: attendee.status,
-      'Registered At': attendee.registeredAt,
-      'Checked In At': attendee.attendedAt || '',
-    }));
-
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendees');
-    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-
-    await this.logActivity(accountId, 'event.exportAttendeesExcel', { eventId });
-    return buffer as ArrayBuffer;
+    const workbook = XLSX.utils.book_new()
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'المسجلون')
+    return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer
   }
 }
