@@ -7,16 +7,32 @@ export interface User {
   updatedAt: string;
 }
 
+export interface TicketType {
+  label: string;
+  price: number;
+}
+
 export interface Event {
   id: string;
+  account_id: string;
   title: string;
   description: string;
   date: string; // ISO date string
   location: string;
   organizerId: string;
   maxAttendees?: number;
+  ticketTypes?: TicketType[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface EventStats {
+  eventId: string;
+  totalAttendees: number;
+  checkedIn: number;
+  registered: number;
+  cancelled: number;
+  revenue: number;
 }
 
 export interface Attendee {

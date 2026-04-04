@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import { EventService } from '@/services/EventService';
 import { AttendeeService } from '@/services/AttendeeService';
 import { Event, Attendee } from '@/types';
@@ -24,11 +25,18 @@ export default function EventDetailPage() {
       if (!eventId) return;
 
       try {
+        const { data } = await supabase.auth.getUser();
+        const user = data.user;
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
         const eventService = new EventService();
         const attendeeService = new AttendeeService();
 
         const [eventData, attendeesData] = await Promise.all([
-          eventService.getById(eventId),
+          eventService.getById(eventId, user.id),
           attendeeService.getByEvent(eventId),
         ]);
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import { AttendeeService } from '@/services/AttendeeService';
 import { EventService } from '@/services/EventService';
 import { Attendee, Event } from '@/types';
@@ -27,11 +28,15 @@ export default function ScannerPage() {
 
   useEffect(() => {
     const fetchEvents = async () => {
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+      if (!user) return;
+
       const eventService = new EventService();
-      const data = await eventService.getAll();
-      setEvents(data);
-      if (data.length > 0) {
-        setSelectedEventId(data[0].id);
+      const dataEvents = await eventService.list(user.id);
+      setEvents(dataEvents);
+      if (dataEvents.length > 0) {
+        setSelectedEventId(dataEvents[0].id);
       }
     };
     fetchEvents();

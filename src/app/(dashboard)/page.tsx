@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 import { EventService } from '@/services/EventService';
 import { AttendeeService } from '@/services/AttendeeService';
 import { Event, Attendee } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Users, Plus } from 'lucide-react';
-import Link from 'next/link';
 
 export default function DashboardPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -17,11 +18,18 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const { data } = await supabase.auth.getUser();
+        const user = data.user;
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
         const eventService = new EventService();
         const attendeeService = new AttendeeService();
 
         const [eventsData, attendeesData] = await Promise.all([
-          eventService.getAll(),
+          eventService.list(user.id),
           attendeeService.getAll(),
         ]);
 

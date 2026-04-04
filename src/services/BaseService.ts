@@ -11,4 +11,17 @@ export class BaseService {
       throw new Error('Supabase environment variables not set');
     }
   }
+
+  protected async logActivity(accountId: string, action: string, metadata: Record<string, unknown> = {}) {
+    const { error } = await this.supabase.from('activity_logs').insert({
+      account_id: accountId,
+      action,
+      metadata,
+      created_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.warn('Failed to log activity:', error.message);
+    }
+  }
 }
