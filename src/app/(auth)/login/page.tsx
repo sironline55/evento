@@ -44,10 +44,10 @@ export default function LoginPage() {
   const inp: React.CSSProperties = { width:'100%', padding:'12px 14px', border:'1px solid #e5e7eb', borderRadius:10, fontSize:15, boxSizing:'border-box', outline:'none', fontFamily:'inherit', background:'#fafafa' }
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#f0f9f6,#e8f4f0)'}} dir="rtl">
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#FBF8F5,#F3F0F8)'}} dir="rtl">
       <div style={{background:'#fff',borderRadius:20,padding:40,width:'100%',maxWidth:400,boxShadow:'0 8px 40px rgba(0,0,0,0.08)'}}>
         <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{width:56,height:56,background:'#2B6E64',borderRadius:16,display:'inline-flex',alignItems:'center',justifyContent:'center',marginBottom:16,fontSize:24}}>🎪</div>
+          <div style={{width:56,height:56,background:'#F05537',borderRadius:16,display:'inline-flex',alignItems:'center',justifyContent:'center',marginBottom:16,fontSize:24}}>🎪</div>
           <h1 style={{fontSize:24,fontWeight:700,margin:0}}>EventVMS</h1>
           <p style={{color:'#666',fontSize:14,marginTop:4}}>تسجيل الدخول لحسابك</p>
         </div>
@@ -74,12 +74,12 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
-          <button type="submit" disabled={loading||googleLoading} style={{background:'#2B6E64',color:'#fff',padding:'14px',borderRadius:12,border:'none',fontSize:16,fontWeight:600,cursor:'pointer',opacity:loading?0.7:1}}>
+          <button type="submit" disabled={loading||googleLoading} style={{background:'#F05537',color:'#fff',padding:'14px',borderRadius:12,border:'none',fontSize:16,fontWeight:600,cursor:'pointer',opacity:loading?0.7:1}}>
             {loading?'جاري تسجيل الدخول...':'تسجيل الدخول'}
           </button>
         </form>
         <p style={{textAlign:'center',marginTop:20,fontSize:14,color:'#666'}}>
-          ليس لديك حساب؟ <Link href="/register" style={{color:'#2B6E64',fontWeight:600}}>سجّل الآن</Link>
+          ليس لديك حساب؟ <Link href="/register" style={{color:'#F05537',fontWeight:600}}>سجّل الآن</Link>
         </p>
       </div>
     </div>
