@@ -1,20 +1,13 @@
-import { ReactNode } from 'react';
-import { Sidebar, MobileNav } from '@/components/Sidebar';
+'use client'
+import Sidebar from '@/components/layout/Sidebar'
 
-interface DashboardLayoutProps {
-  children: ReactNode;
-}
-
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f9fafb' }} dir="rtl">
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <MobileNav />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 md:ml-64">
-          {children}
-        </main>
-      </div>
+      <main style={{ flex: 1, marginRight: 240, padding: 0, minHeight: '100vh' }} className="md:mr-60">
+        {children}
+      </main>
     </div>
-  );
+  )
 }
