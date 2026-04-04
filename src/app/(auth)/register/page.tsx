@@ -36,21 +36,21 @@ export default function RegisterPage() {
   const inp: React.CSSProperties = { width:'100%', padding:'12px 14px', border:'1px solid #e5e7eb', borderRadius:10, fontSize:15, boxSizing:'border-box', outline:'none', fontFamily:'inherit', background:'#fafafa' }
 
   if (success) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#f0f9f6,#e8f4f0)'}} dir="rtl">
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#FBF8F5,#F3F0F8)'}} dir="rtl">
       <div style={{background:'#fff',borderRadius:20,padding:40,maxWidth:400,width:'100%',textAlign:'center',boxShadow:'0 8px 40px rgba(0,0,0,0.08)'}}>
         <div style={{fontSize:56,marginBottom:16}}>📧</div>
         <h2 style={{fontSize:22,fontWeight:700,margin:'0 0 8px'}}>تحقق من بريدك الإلكتروني</h2>
         <p style={{color:'#666',marginBottom:24}}>أرسلنا رابط التأكيد إلى <strong>{form.email}</strong></p>
-        <Link href="/login" style={{background:'#2B6E64',color:'#fff',padding:'12px 28px',borderRadius:12,textDecoration:'none',fontWeight:600}}>الذهاب لتسجيل الدخول</Link>
+        <Link href="/login" style={{background:'#F05537',color:'#fff',padding:'12px 28px',borderRadius:12,textDecoration:'none',fontWeight:600}}>الذهاب لتسجيل الدخول</Link>
       </div>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#f0f9f6,#e8f4f0)'}} dir="rtl">
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,#FBF8F5,#F3F0F8)'}} dir="rtl">
       <div style={{background:'#fff',borderRadius:20,padding:40,width:'100%',maxWidth:400,boxShadow:'0 8px 40px rgba(0,0,0,0.08)'}}>
         <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{width:56,height:56,background:'#2B6E64',borderRadius:16,display:'inline-flex',alignItems:'center',justifyContent:'center',marginBottom:16,fontSize:24}}>🎪</div>
+          <div style={{width:56,height:56,background:'#F05537',borderRadius:16,display:'inline-flex',alignItems:'center',justifyContent:'center',marginBottom:16,fontSize:24}}>🎪</div>
           <h1 style={{fontSize:24,fontWeight:700,margin:0}}>إنشاء حساب جديد</h1>
           <p style={{color:'#666',fontSize:13,marginTop:4}}>ابدأ مجاناً — لا بطاقة ائتمان</p>
         </div>
@@ -67,9 +67,9 @@ export default function RegisterPage() {
           <div><label style={{fontSize:13,fontWeight:500,display:'block',marginBottom:6}}>الاسم أو اسم الجهة</label><input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required placeholder="شركة الفعاليات" style={inp}/></div>
           <div><label style={{fontSize:13,fontWeight:500,display:'block',marginBottom:6}}>البريد الإلكتروني</label><input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required placeholder="example@email.com" style={inp}/></div>
           <div><label style={{fontSize:13,fontWeight:500,display:'block',marginBottom:6}}>كلمة المرور</label><input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required minLength={6} placeholder="••••••••" style={inp}/></div>
-          <button type="submit" disabled={loading||googleLoading} style={{background:'#2B6E64',color:'#fff',padding:'14px',borderRadius:12,border:'none',fontSize:16,fontWeight:600,cursor:'pointer',opacity:loading?0.7:1}}>{loading?'جاري إنشاء الحساب...':'إنشاء الحساب مجاناً'}</button>
+          <button type="submit" disabled={loading||googleLoading} style={{background:'#F05537',color:'#fff',padding:'14px',borderRadius:12,border:'none',fontSize:16,fontWeight:600,cursor:'pointer',opacity:loading?0.7:1}}>{loading?'جاري إنشاء الحساب...':'إنشاء الحساب مجاناً'}</button>
         </form>
-        <p style={{textAlign:'center',marginTop:20,fontSize:14,color:'#666'}}>لديك حساب؟ <Link href="/login" style={{color:'#2B6E64',fontWeight:600}}>سجّل الدخول</Link></p>
+        <p style={{textAlign:'center',marginTop:20,fontSize:14,color:'#666'}}>لديك حساب؟ <Link href="/login" style={{color:'#F05537',fontWeight:600}}>سجّل الدخول</Link></p>
       </div>
     </div>
   )
