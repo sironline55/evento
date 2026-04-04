@@ -40,7 +40,7 @@ export default function StaffingPage() {
   async function submitRequest() {
     setRequestLoading(true)
     try {
-      await WorkerService.createRequest({ account_id: 'current', ...requestForm as any, duration_hours: parseInt(requestForm.duration_hours), workers_needed: parseInt(requestForm.workers_needed), daily_rate: parseInt(requestForm.daily_rate) })
+      await WorkerService.createRequest({ // account_id: removed - field is optional ...requestForm as any, duration_hours: parseInt(requestForm.duration_hours), workers_needed: parseInt(requestForm.workers_needed), daily_rate: parseInt(requestForm.daily_rate) })
       setShowRequest(false)
       alert('تم إرسال طلب التوظيف! سنتواصل معك قريباً.')
     } catch(e) { alert('حدث خطأ') }
