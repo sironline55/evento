@@ -1,4 +1,4 @@
-import { Suspense } from 'next'
+import { Suspense } from 'react'
 import AttendeesClient from './AttendeesClient'
 
 export default function AttendeesPage() {
