@@ -1,4 +1,5 @@
 'use client';
+'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Users, BarChart3, CreditCard, BookOpen, FileText, Scan, Settings } from 'lucide-react';

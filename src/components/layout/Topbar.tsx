@@ -1,4 +1,5 @@
 'use client';
+'use client';
 interface Props{title?:string}
 export default function Topbar({title='EventVMS'}:Props){
   return(
