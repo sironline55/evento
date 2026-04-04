@@ -49,7 +49,7 @@ export default function Sidebar() {
         <div style={{
           width: 36, height: 36, background: '#F05537', borderRadius: 6,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 18, marginBottom: 14, flexShrink: 0, color: '#fff',
+          marginBottom: 14, flexShrink: 0, color: '#fff',
           fontWeight: 800, fontSize: 13
         }}>E</div>
 
