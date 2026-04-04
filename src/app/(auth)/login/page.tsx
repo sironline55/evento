@@ -18,6 +18,7 @@ const GoogleIcon = () => (
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
@@ -51,7 +52,7 @@ export default function LoginPage() {
           <p style={{color:'#666',fontSize:14,marginTop:4}}>تسجيل الدخول لحسابك</p>
         </div>
         {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'10px 14px',color:'#dc2626',fontSize:13,marginBottom:16}}>{error}</div>}
-        <button onClick={loginWithGoogle} disabled={googleLoading||loading} style={{width:'100%',padding:'13px',background:'#fff',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:20,color:'#374151',opacity:googleLoading?0.7:1}}>
+        <button onClick={loginWithGoogle} disabled={googleLoading||loading} style={{width:'100%',padding:'13px',background:'#fff',border:'1.5px solid #e5e7eb',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:20,color:'#111827',opacity:googleLoading?0.7:1}}>
           <GoogleIcon />{googleLoading?'جاري التحويل...':'الدخول بحساب Google'}
         </button>
         <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
@@ -61,12 +62,17 @@ export default function LoginPage() {
         </div>
         <form onSubmit={login} style={{display:'flex',flexDirection:'column',gap:16}}>
           <div>
-            <label style={{fontSize:13,fontWeight:500,display:'block',marginBottom:6}}>البريد الإلكتروني</label>
+            <label style={{fontSize:13,fontWeight:600,color:'#111827',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
             <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="example@email.com" style={inp}/>
           </div>
           <div>
             <label style={{fontSize:13,fontWeight:500,display:'block',marginBottom:6}}>كلمة المرور</label>
-            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} required placeholder="••••••••" style={inp}/>
+            <div style={{position:'relative'}}>
+              <input type={showPassword?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} required placeholder="••••••••" style={{...inp,paddingLeft:42}}/>
+              <button type="button" onClick={()=>setShowPassword(!showPassword)} style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',padding:4,display:'flex',alignItems:'center',color:'#9ca3af',fontSize:18}}>
+                {showPassword?'👁':'👁‍🗨'}
+              </button>
+            </div>
           </div>
           <button type="submit" disabled={loading||googleLoading} style={{background:'#2B6E64',color:'#fff',padding:'14px',borderRadius:12,border:'none',fontSize:16,fontWeight:600,cursor:'pointer',opacity:loading?0.7:1}}>
             {loading?'جاري تسجيل الدخول...':'تسجيل الدخول'}
