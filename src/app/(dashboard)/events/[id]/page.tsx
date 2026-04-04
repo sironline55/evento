@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -14,55 +14,35 @@ const C = {
   muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#3A7D0A'
 }
 
-const STATUS_CONFIG: Record<string,{label:string;color:string;bg:string}> = {
-  draft:     { label:'مسودة',  color:'#6F7287', bg:'#F8F7FA' },
-  published: { label:'نشط',   color:'#3A7D0A', bg:'#EAF7E0' },
-  active:    { label:'نشط',   color:'#3A7D0A', bg:'#EAF7E0' },
-  completed: { label:'منتهي', color:'#6F7287', bg:'#F8F7FA' },
-  cancelled: { label:'ملغي',  color:'#C6341A', bg:'#FDEDEA' },
+const STATUS_MAP: Record<string,{label:string;color:string;bg:string}> = {
+  draft:     {label:'مسودة',  color:'#6F7287', bg:'#F8F7FA'},
+  published: {label:'نشط',   color:'#3A7D0A', bg:'#EAF7E0'},
+  active:    {label:'نشط',   color:'#3A7D0A', bg:'#EAF7E0'},
+  completed: {label:'منتهي', color:'#6F7287', bg:'#F8F7FA'},
+  cancelled: {label:'ملغي',  color:'#C6341A', bg:'#FDEDEA'},
 }
 
 const REG_STATUS: Record<string,{label:string;color:string;bg:string}> = {
-  pending:   { label:'منتظر', color:'#B07000', bg:'#FFF8E8' },
-  confirmed: { label:'مؤكد',  color:'#3A7D0A', bg:'#EAF7E0' },
-  attended:  { label:'حضر',   color:'#1A4A7A', bg:'#E8F0F8' },
-  cancelled: { label:'ملغي',  color:'#DC2626', bg:'#FEF2F2' },
+  pending:   {label:'منتظر',  color:'#B07000', bg:'#FFF8E8'},
+  confirmed: {label:'مؤكد',  color:'#1A7A4A', bg:'#E8F8F0'},
+  attended:  {label:'حضر',   color:'#1A4A9A', bg:'#E8F0FA'},
+  cancelled: {label:'ملغي',  color:'#DC2626', bg:'#FEF2F2'},
 }
-
-const TABS = [
-  { id:'overview',   label:'نظرة عامة', icon:'📋' },
-  { id:'attendees',  label:'الزوار',    icon:'👥' },
-  { id:'scanner',    label:'الماسح',    icon:'📷' },
-  { id:'analytics',  label:'الإحصاءات', icon:'📊' },
-  { id:'settings',   label:'الإعدادات', icon:'⚙️' },
-]
 
 export default function EventDetailPage() {
   const { id } = useParams()
   const router = useRouter()
-  const scanRef = useRef<HTMLInputElement>(null)
 
-  const [event, setEvent]             = useState<any>(null)
-  const [registrations, setRegs]      = useState<any[]>([])
-  const [count, setCount]             = useState(0)
-  const [loading, setLoading]         = useState(true)
-  const [tab, setTab]                 = useState('overview')
-  const [search, setSearch]           = useState('')
-  const [regFilter, setRegFilter]     = useState('all')
-  const [copied, setCopied]           = useState(false)
-  const [publishLoading, setPublishLoading] = useState(false)
-
-  // Scanner state
-  const [qrInput, setQrInput]   = useState('')
-  const [scanResult, setScanResult] = useState<{type:string;msg:string;name?:string}|null>(null)
-  const [scanLoading, setScanLoading] = useState(false)
-  const [scanHistory, setScanHistory] = useState<{name:string;time:string;type:string}[]>([])
-
-  // Settings state
-  const [newStatus, setNewStatus] = useState('')
-  const [saving, setSaving] = useState(false)
-
-  const regLink = typeof window !== 'undefined' ? `${window.location.origin}/r/${id}` : ''
+  const [event, setEvent]       = useState<any>(null)
+  const [regs, setRegs]         = useState<any[]>([])
+  const [counts, setCounts]     = useState({total:0, attended:0, pending:0, cancelled:0})
+  const [loading, setLoading]   = useState(true)
+  const [tab, setTab]           = useState('overview')
+  const [copied, setCopied]     = useState(false)
+  const [statusSaving, setStatusSaving] = useState(false)
+  const [search, setSearch]     = useState('')
+  const [regFilter, setRegFilter] = useState('all')
+  const [checkinLoading, setCheckinLoading] = useState<string|null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -70,599 +50,423 @@ export default function EventDetailPage() {
   }, [id])
 
   async function loadData() {
-    const [{ data: ev }, { data: regs }, { count: c }] = await Promise.all([
+    setLoading(true)
+    const [evRes, regsRes, totalRes, attendedRes, pendingRes, cancelledRes] = await Promise.all([
       sb.from('events').select('*').eq('id', id).single(),
-      sb.from('registrations').select('id,guest_name,guest_email,guest_phone,status,created_at,qr_code').eq('event_id', id).order('created_at', { ascending: false }),
-      sb.from('registrations').select('*', { count: 'exact', head: true }).eq('event_id', id),
+      sb.from('registrations').select('id,guest_name,guest_email,guest_phone,status,qr_code,created_at').eq('event_id', id).order('created_at',{ascending:false}),
+      sb.from('registrations').select('*',{count:'exact',head:true}).eq('event_id', id),
+      sb.from('registrations').select('*',{count:'exact',head:true}).eq('event_id', id).eq('status','attended'),
+      sb.from('registrations').select('*',{count:'exact',head:true}).eq('event_id', id).eq('status','pending'),
+      sb.from('registrations').select('*',{count:'exact',head:true}).eq('event_id', id).eq('status','cancelled'),
     ])
-    setEvent(ev)
-    setRegs(regs || [])
-    setCount(c || 0)
-    setNewStatus(ev?.status || 'draft')
+    setEvent(evRes.data)
+    setRegs(regsRes.data||[])
+    setCounts({total:totalRes.count||0, attended:attendedRes.count||0, pending:pendingRes.count||0, cancelled:cancelledRes.count||0})
     setLoading(false)
   }
 
   async function copyRegLink() {
-    await navigator.clipboard.writeText(regLink)
+    const link = `${window.location.origin}/r/${id}`
+    await navigator.clipboard.writeText(link)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setTimeout(()=>setCopied(false), 2500)
+  }
+
+  async function changeStatus(newStatus: string) {
+    setStatusSaving(true)
+    await sb.from('events').update({status: newStatus}).eq('id', id)
+    setEvent((e: any) => ({...e, status: newStatus}))
+    setStatusSaving(false)
+  }
+
+  async function manualCheckin(regId: string) {
+    setCheckinLoading(regId)
+    await sb.from('registrations').update({status:'attended', checked_in_at: new Date().toISOString()}).eq('id', regId)
+    setRegs(rs => rs.map(r => r.id===regId ? {...r, status:'attended'} : r))
+    setCounts(c => ({...c, attended:c.attended+1, pending:Math.max(0,c.pending-1)}))
+    setCheckinLoading(null)
   }
 
   async function exportCSV() {
-    const rows = [
-      ['الاسم','البريد الإلكتروني','الهاتف','الحالة','تاريخ التسجيل'],
-      ...registrations.map(r => [r.guest_name||'', r.guest_email||'', r.guest_phone||'', r.status||'', r.created_at?.substring(0,10)||''])
-    ]
-    const csv = rows.map(r => r.join(',')).join('\n')
-    const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8' })
+    const headers = ['الاسم','البريد','الهاتف','الحالة','تاريخ التسجيل']
+    const rows = regs.map(r=>[
+      r.guest_name||'', r.guest_email||'', r.guest_phone||'',
+      REG_STATUS[r.status]?.label||r.status,
+      r.created_at?new Date(r.created_at).toLocaleDateString('ar-SA'):''
+    ])
+    const csv = [headers,...rows].map(r=>r.join(',')).join('\n')
+    const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = `${event?.title}_زوار.csv`
-    a.click()
+    a.href=url; a.download=`${event?.title||'event'}-registrations.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
-  async function checkIn(regId: string, name: string) {
-    await sb.from('registrations').update({ status:'attended', checked_in_at: new Date().toISOString() }).eq('id', regId)
-    setRegs(r => r.map(x => x.id === regId ? { ...x, status:'attended' } : x))
-  }
-
-  async function handleScan() {
-    const code = qrInput.trim(); if (!code || scanLoading) return
-    setScanLoading(true); setScanResult(null)
-    try {
-      const { data: reg } = await sb.from('registrations')
-        .select('id,guest_name,status').eq('qr_code', code).eq('event_id', id).single()
-      if (!reg) {
-        setScanResult({ type:'error', msg:'لم يُعثر على هذا الرمز في هذه الفعالية' })
-      } else if (reg.status === 'attended') {
-        setScanResult({ type:'warning', msg:'تم التحقق مسبقاً', name: reg.guest_name })
-      } else {
-        await sb.from('registrations').update({ status:'attended', checked_in_at: new Date().toISOString() }).eq('id', reg.id)
-        setScanResult({ type:'success', msg:'تم التحقق بنجاح ✓', name: reg.guest_name })
-        setScanHistory(h => [{ name:reg.guest_name, time:new Date().toLocaleTimeString('ar-SA'), type:'success' }, ...h.slice(0,19)])
-        setRegs(r => r.map(x => x.id === reg.id ? { ...x, status:'attended' } : x))
-        setCount(c => c)
-      }
-    } catch { setScanResult({ type:'error', msg:'خطأ في الاتصال' }) }
-    finally { setScanLoading(false); setQrInput(''); setTimeout(()=>scanRef.current?.focus(),100) }
-  }
-
-  async function saveSettings() {
-    setSaving(true)
-    await sb.from('events').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id)
-    setEvent((e: any) => ({ ...e, status: newStatus }))
-    setSaving(false)
-  }
-
-  async function publishEvent() {
-    setPublishLoading(true)
-    await sb.from('events').update({ status:'published' }).eq('id', id)
-    setEvent((e: any) => ({ ...e, status:'published' }))
-    setNewStatus('published')
-    setPublishLoading(false)
-  }
-
   if (loading) return (
-    <div style={{ padding:40, textAlign:'center', color:C.muted }}>
-      <div style={{ fontSize:32 }}>⏳</div>
-      <p>جاري التحميل...</p>
-    </div>
-  )
-  if (!event) return (
-    <div style={{ padding:40, textAlign:'center', color:C.muted }}>
-      <p>الفعالية غير موجودة</p>
-      <Link href="/events" style={{ color:C.orange }}>← العودة للفعاليات</Link>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh'}}>
+      <div style={{textAlign:'center',color:C.muted}}>
+        <div style={{fontSize:32,marginBottom:8}}>⏳</div>
+        <p>جاري التحميل...</p>
+      </div>
     </div>
   )
 
-  const s = STATUS_CONFIG[event.status] || STATUS_CONFIG.draft
-  const attended = registrations.filter(r => r.status === 'attended').length
-  const fillRate = event.capacity ? Math.round((count / event.capacity) * 100) : null
-  const filteredRegs = registrations.filter(r => {
-    const ms = !search || r.guest_name?.toLowerCase().includes(search.toLowerCase()) || r.guest_email?.toLowerCase().includes(search.toLowerCase())
-    const mf = regFilter === 'all' || r.status === regFilter
-    return ms && mf
+  if (!event) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh'}}>
+      <div style={{textAlign:'center'}}>
+        <div style={{fontSize:48,marginBottom:12}}>❌</div>
+        <h2 style={{color:C.navy,margin:'0 0 8px'}}>الفعالية غير موجودة</h2>
+        <Link href="/events" style={{color:C.orange,fontWeight:600,fontSize:14}}>← العودة للفعاليات</Link>
+      </div>
+    </div>
+  )
+
+  const s = STATUS_MAP[event.status] || STATUS_MAP.draft
+  const fillRate = event.capacity ? Math.round((counts.total/event.capacity)*100) : null
+  const regLink = typeof window !== 'undefined' ? `${window.location.origin}/r/${id}` : `/r/${id}`
+  const filteredRegs = regs.filter(r => {
+    const matchSearch = !search || r.guest_name?.toLowerCase().includes(search.toLowerCase()) || r.guest_email?.toLowerCase().includes(search.toLowerCase())
+    const matchFilter = regFilter === 'all' || r.status === regFilter
+    return matchSearch && matchFilter
   })
 
-  const SCAN_STYLES: Record<string,{bg:string;border:string;color:string;icon:string}> = {
-    success: { bg:'#EAF7E0', border:'#3A7D0A', color:'#1A5A00', icon:'✅' },
-    warning: { bg:'#FFF8E8', border:'#B07000', color:'#7A5000', icon:'⚠️' },
-    error:   { bg:'#FEF2F2', border:'#DC2626', color:'#B91C1C', icon:'❌' },
-  }
-
   return (
-    <div style={{ minHeight:'100vh', background:C.bg, direction:'rtl' }}>
+    <div style={{minHeight:'100vh', background:C.bg, direction:'rtl'}}>
 
-      {/* ── Top Header ── */}
-      <div style={{ background:C.card, borderBottom:`1px solid ${C.border}`, padding:'0 32px' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', height:52 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <Link href="/events" style={{ color:C.muted, textDecoration:'none', fontSize:13, fontWeight:500 }}>
-              ← الفعاليات
-            </Link>
-            <span style={{ color:C.border }}>/</span>
-            <span style={{ fontSize:13, color:C.text, fontWeight:600, maxWidth:300, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-              {event.title}
-            </span>
+      {/* ── Top header ── */}
+      <div style={{background:C.card, borderBottom:`1px solid ${C.border}`, padding:'24px 32px 0'}}>
+
+        {/* Breadcrumb */}
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,fontSize:13}}>
+          <Link href="/events" style={{color:C.muted,textDecoration:'none'}}>الفعاليات</Link>
+          <span style={{color:C.border}}>/</span>
+          <span style={{color:C.text,fontWeight:500}}>{event.title}</span>
+        </div>
+
+        {/* Title row */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:18,flexWrap:'wrap',gap:12}}>
+          <div>
+            <h1 style={{fontSize:32,fontWeight:800,margin:'0 0 6px',color:C.navy,letterSpacing:'-0.5px'}}>{event.title}</h1>
+            <div style={{display:'flex',gap:16,flexWrap:'wrap'}}>
+              {event.start_date && <span style={{fontSize:13,color:C.muted}}>📅 {new Date(event.start_date).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</span>}
+              {event.location   && <span style={{fontSize:13,color:C.muted}}>📍 {event.location}</span>}
+              {event.category   && <span style={{fontSize:13,color:C.muted}}>🏷 {event.category}</span>}
+            </div>
           </div>
 
-          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            {/* Status badge */}
-            <span style={{ padding:'4px 12px', borderRadius:4, fontSize:12, fontWeight:600, background:s.bg, color:s.color }}>
-              {s.label}
-            </span>
-
-            {/* Publish button if draft */}
-            {(event.status === 'draft') && (
-              <button onClick={publishEvent} disabled={publishLoading} style={{
-                padding:'7px 16px', border:'none', borderRadius:6,
-                background:C.green, color:'#fff', fontWeight:700, fontSize:12, cursor:'pointer'
-              }}>
-                {publishLoading ? '...' : '🚀 نشر الفعالية'}
-              </button>
-            )}
-
-            {/* Copy reg link */}
+          {/* Actions */}
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            {/* Status badge + quick change */}
+            <div style={{position:'relative'}}>
+              <select value={event.status} onChange={e=>changeStatus(e.target.value)}
+                disabled={statusSaving}
+                style={{padding:'8px 12px',border:`1px solid ${s.color}`,borderRadius:6,
+                  background:s.bg,color:s.color,fontWeight:700,fontSize:13,cursor:'pointer',
+                  outline:'none',fontFamily:'inherit'}}>
+                {Object.entries(STATUS_MAP).map(([v,{label}])=>(
+                  <option key={v} value={v}>{label}</option>
+                ))}
+              </select>
+            </div>
             <button onClick={copyRegLink} style={{
-              padding:'7px 14px', border:`1px solid ${C.border}`, borderRadius:6,
-              background: copied ? '#EAF7E0' : C.card, color: copied ? C.green : C.text,
-              fontWeight:600, fontSize:12, cursor:'pointer', transition:'all 0.2s'
-            }}>
-              {copied ? '✓ تم النسخ' : '🔗 نسخ رابط التسجيل'}
+              display:'flex',alignItems:'center',gap:6,
+              padding:'8px 14px',border:`1px solid ${C.border}`,borderRadius:6,
+              background:copied?'#EAF7E0':C.card,color:copied?C.green:C.text,
+              fontWeight:600,fontSize:13,cursor:'pointer',transition:'all 0.2s'}}>
+              {copied?'✓ تم النسخ':'📋 نسخ رابط التسجيل'}
             </button>
-
-            {/* Export */}
-            <button onClick={exportCSV} style={{
-              padding:'7px 14px', border:`1px solid ${C.border}`, borderRadius:6,
-              background:C.card, color:C.text, fontWeight:600, fontSize:12, cursor:'pointer'
-            }}>
-              ⬇️ تصدير CSV
-            </button>
-
-            {/* Edit event */}
-            <Link href={`/events/${id}/edit`} style={{
-              padding:'7px 14px', border:`1px solid ${C.border}`, borderRadius:6,
-              background:C.card, color:C.text, fontWeight:600, fontSize:12,
-              textDecoration:'none', display:'inline-block'
-            }}>
+            <Link href={`/scanner`} style={{
+              display:'flex',alignItems:'center',gap:6,
+              padding:'8px 14px',border:'none',borderRadius:6,
+              background:C.orange,color:'#fff',fontWeight:700,fontSize:13,textDecoration:'none'}}>
+              📷 ماسح QR
+            </Link>
+            <Link href={`/events/new`} style={{
+              display:'flex',alignItems:'center',gap:6,
+              padding:'8px 14px',border:`1px solid ${C.border}`,borderRadius:6,
+              background:C.card,color:C.text,fontWeight:600,fontSize:13,textDecoration:'none'}}>
               ✏️ تعديل
             </Link>
           </div>
         </div>
 
-        {/* Event title */}
-        <div style={{ paddingBottom:0, marginTop:4 }}>
-          <h1 style={{ fontSize:32, fontWeight:800, margin:'0 0 4px', color:C.navy, letterSpacing:'-0.5px' }}>
-            {event.title}
-          </h1>
-          <div style={{ display:'flex', gap:16, paddingBottom:0, flexWrap:'wrap' }}>
-            {event.location && <span style={{ fontSize:13, color:C.muted }}>📍 {event.location}</span>}
-            {event.start_date && <span style={{ fontSize:13, color:C.muted }}>📅 {new Date(event.start_date).toLocaleDateString('ar-SA', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</span>}
-            {event.category && <span style={{ fontSize:13, color:C.muted }}>🏷️ {event.category}</span>}
-          </div>
-        </div>
-
         {/* Tabs */}
-        <div style={{ display:'flex', marginTop:12 }}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              padding:'10px 18px', background:'none', border:'none', cursor:'pointer',
-              fontSize:13, fontWeight:tab===t.id?700:400,
-              color:tab===t.id?C.orange:C.muted,
-              borderBottom:tab===t.id?`2px solid ${C.orange}`:'2px solid transparent',
-              transition:'all 0.15s', marginBottom:-1, display:'flex', alignItems:'center', gap:6
-            }}>
-              <span style={{ fontSize:14 }}>{t.icon}</span>{t.label}
+        <div style={{display:'flex'}}>
+          {[['overview','نظرة عامة'],['attendees',`الزوار (${counts.total})`],['scanner','الماسح'],['settings','الإعدادات']].map(([v,l])=>(
+            <button key={v} onClick={()=>setTab(v)} style={{
+              padding:'10px 20px',background:'none',border:'none',cursor:'pointer',
+              fontSize:14,fontWeight:tab===v?700:400,
+              color:tab===v?C.orange:C.muted,
+              borderBottom:tab===v?`2px solid ${C.orange}`:'2px solid transparent',
+              transition:'all 0.15s',marginBottom:-1}}>
+              {l}
             </button>
           ))}
         </div>
       </div>
 
-      {/* ── Stats Bar ── */}
-      <div style={{ background:C.card, borderBottom:`1px solid ${C.border}`, padding:'14px 32px' }}>
-        <div style={{ display:'flex', gap:28 }}>
-          {[
-            { label:'إجمالي المسجلين', value:count, color:C.orange },
-            { label:'حضروا',           value:attended, color:C.green },
-            { label:'لم يحضروا',       value:count-attended, color:C.muted },
-            { label:'الطاقة الاستيعابية', value:event.capacity||'غير محدودة', color:C.navy },
-            ...(fillRate !== null ? [{ label:'نسبة الامتلاء', value:`${fillRate}%`, color:fillRate>80?'#DC2626':C.navy }] : []),
-          ].map(stat => (
-            <div key={stat.label} style={{ textAlign:'center', minWidth:80 }}>
-              <p style={{ fontSize:22, fontWeight:800, color:stat.color, margin:0 }}>{stat.value}</p>
-              <p style={{ fontSize:11, color:C.muted, margin:'2px 0 0', fontWeight:500 }}>{stat.label}</p>
+      <div style={{maxWidth:1060,margin:'0 auto',padding:'24px 32px'}}>
+
+        {/* ═══ TAB: OVERVIEW ═══ */}
+        {tab==='overview' && (
+          <>
+            {/* Stats */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14,marginBottom:22}}>
+              {[
+                {label:'إجمالي التسجيلات', value:counts.total,   icon:'🎟', color:C.orange},
+                {label:'حضروا',             value:counts.attended, icon:'✅', color:C.green},
+                {label:'قيد الانتظار',      value:counts.pending,  icon:'⏳', color:'#B07000'},
+                {label:'الطاقة / الامتلاء', value:event.capacity?`${counts.total}/${event.capacity}${fillRate!==null?` (${fillRate}%)`:''}`:counts.total, icon:'👥', color:C.navy},
+              ].map(({label,value,icon,color})=>(
+                <div key={label} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:'18px 20px'}}>
+                  <div style={{fontSize:22,marginBottom:10}}>{icon}</div>
+                  <p style={{fontSize:24,fontWeight:800,color,margin:'0 0 4px'}}>{value}</p>
+                  <p style={{fontSize:12,color:C.muted,margin:0}}>{label}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* ── Tab Content ── */}
-      <div style={{ padding:'24px 32px', maxWidth:1000, margin:'0 auto' }}>
-
-        {/* ═════ OVERVIEW TAB ═════ */}
-        {tab === 'overview' && (
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:20 }}>
-            <div>
-              {/* Event info card */}
-              <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:24, marginBottom:16 }}>
-                <h2 style={{ fontSize:16, fontWeight:700, color:C.navy, margin:'0 0 16px' }}>تفاصيل الفعالية</h2>
-
-                {event.cover_image && (
-                  <img src={event.cover_image} alt={event.title}
-                    style={{ width:'100%', height:200, objectFit:'cover', borderRadius:8, marginBottom:16 }}/>
-                )}
-
-                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                  {[
-                    { icon:'📅', label:'تاريخ البداية', val: event.start_date ? new Date(event.start_date).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—' },
-                    { icon:'⏰', label:'تاريخ النهاية',  val: event.end_date   ? new Date(event.end_date).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—' },
-                    { icon:'📍', label:'الموقع',         val: event.location || '—' },
-                    { icon:'👥', label:'الطاقة الاستيعابية', val: event.capacity ? event.capacity.toLocaleString('ar') + ' شخص' : 'غير محدودة' },
-                    { icon:'🏷️', label:'التصنيف',        val: [event.category, event.subcategory].filter(Boolean).join(' · ') || '—' },
-                    { icon:'🔄', label:'التكرار',         val: event.is_recurring ? `متكررة — ${(event.recurrence as any)?.type||''}` : 'فعالية منفردة' },
-                  ].map(({ icon, label, val }) => (
-                    <div key={label} style={{ display:'flex', gap:12, padding:'8px 0', borderBottom:`1px solid ${C.border}` }}>
-                      <span style={{ fontSize:16, width:20, flexShrink:0 }}>{icon}</span>
-                      <span style={{ fontSize:13, color:C.muted, minWidth:130 }}>{label}</span>
-                      <span style={{ fontSize:13, fontWeight:600, color:C.text }}>{val}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {event.description && (
-                  <div style={{ marginTop:16, paddingTop:16, borderTop:`1px solid ${C.border}` }}>
-                    <p style={{ fontSize:13, fontWeight:600, color:C.navy, margin:'0 0 8px' }}>نبذة عن الفعالية</p>
-                    <p style={{ fontSize:13, color:C.text, lineHeight:1.7, margin:0 }}>{event.description}</p>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 300px',gap:18,alignItems:'start'}}>
+              {/* Recent registrations */}
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,overflow:'hidden'}}>
+                <div style={{padding:'14px 20px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <h2 style={{fontSize:15,fontWeight:700,margin:0,color:C.navy}}>آخر التسجيلات</h2>
+                  <div style={{display:'flex',gap:8}}>
+                    <button onClick={exportCSV} style={{padding:'6px 12px',border:`1px solid ${C.border}`,borderRadius:6,background:C.bg,fontSize:12,fontWeight:600,cursor:'pointer',color:C.text,display:'flex',alignItems:'center',gap:4}}>
+                      ↓ تصدير CSV
+                    </button>
+                    <button onClick={()=>setTab('attendees')} style={{padding:'6px 12px',border:'none',borderRadius:6,background:'#FEF0ED',color:C.orange,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                      عرض الكل
+                    </button>
                   </div>
-                )}
-              </div>
-
-              {/* Recent attendees preview */}
-              <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, overflow:'hidden' }}>
-                <div style={{ padding:'14px 20px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <h2 style={{ fontSize:15, fontWeight:700, margin:0, color:C.navy }}>آخر الزوار المسجلين</h2>
-                  <button onClick={() => setTab('attendees')} style={{ background:'none', border:'none', color:C.orange, fontWeight:600, fontSize:13, cursor:'pointer' }}>
-                    عرض الكل ({count}) ←
-                  </button>
                 </div>
-                {registrations.slice(0,5).length === 0 ? (
-                  <div style={{ padding:'40px', textAlign:'center', color:C.muted }}>
-                    <p style={{ fontSize:36, margin:'0 0 10px' }}>👥</p>
-                    <p style={{ fontWeight:600, margin:'0 0 4px' }}>لا يوجد مسجلون بعد</p>
-                    <p style={{ fontSize:13, margin:0 }}>شارك رابط التسجيل لبدء استقبال الزوار</p>
+                {regs.length===0?(
+                  <div style={{textAlign:'center',padding:'40px 0',color:C.muted}}>
+                    <p style={{fontSize:40,margin:'0 0 8px'}}>👥</p>
+                    <p style={{fontWeight:600,color:C.navy,margin:'0 0 4px'}}>لا يوجد زوار مسجلون بعد</p>
+                    <p style={{fontSize:13,margin:'0 0 14px'}}>شارك رابط التسجيل لبدء استقبال الزوار</p>
+                    <button onClick={copyRegLink} style={{padding:'8px 18px',border:'none',borderRadius:6,background:C.orange,color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+                      📋 نسخ رابط التسجيل
+                    </button>
                   </div>
-                ) : registrations.slice(0,5).map((r, i) => {
-                  const rs = REG_STATUS[r.status] || REG_STATUS.pending
+                ):regs.slice(0,8).map((r,i)=>{
+                  const rs=REG_STATUS[r.status]||REG_STATUS.pending
                   return (
-                    <div key={r.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'11px 20px', borderBottom:i<4?`1px solid ${C.border}`:'none' }}>
+                    <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 20px',borderBottom:i<Math.min(regs.length,8)-1?`1px solid ${C.border}`:'none',transition:'background 0.12s'}}
+                      onMouseEnter={e=>(e.currentTarget.style.background='#F8F7FA')}
+                      onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
                       <div>
-                        <p style={{ fontWeight:600, fontSize:13, margin:0, color:C.navy }}>{r.guest_name}</p>
-                        <p style={{ fontSize:11, color:C.muted, margin:'2px 0 0' }}>{r.guest_email||r.guest_phone||'—'}</p>
+                        <p style={{fontWeight:700,fontSize:13,margin:0,color:C.navy}}>{r.guest_name||'—'}</p>
+                        <p style={{fontSize:11,color:C.muted,margin:'2px 0 0'}}>{r.guest_email||r.guest_phone||'—'}</p>
                       </div>
-                      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                        <span style={{ fontSize:11, padding:'2px 8px', borderRadius:4, fontWeight:600, background:rs.bg, color:rs.color }}>{rs.label}</span>
-                        {r.status !== 'attended' && (
-                          <button onClick={() => checkIn(r.id, r.guest_name)} style={{ padding:'4px 10px', border:'none', borderRadius:4, background:'#EAF7E0', color:C.green, fontWeight:600, fontSize:11, cursor:'pointer' }}>
-                            تسجيل حضور
+                      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                        {r.status!=='attended'&&(
+                          <button onClick={()=>manualCheckin(r.id)} disabled={checkinLoading===r.id} style={{padding:'4px 10px',border:'none',borderRadius:4,background:'#E8F8F0',color:C.green,fontSize:11,fontWeight:600,cursor:'pointer'}}>
+                            {checkinLoading===r.id?'...':'✓ تسجيل دخول'}
                           </button>
                         )}
+                        <span style={{padding:'3px 10px',borderRadius:4,fontSize:11,fontWeight:600,background:rs.bg,color:rs.color}}>{rs.label}</span>
                       </div>
                     </div>
                   )
                 })}
               </div>
-            </div>
 
-            {/* Right panel */}
-            <div>
-              {/* Registration link card */}
-              <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:20, marginBottom:16 }}>
-                <h3 style={{ fontSize:14, fontWeight:700, color:C.navy, margin:'0 0 12px' }}>🔗 رابط التسجيل للزوار</h3>
-                <div style={{ background:C.bg, border:`1px solid ${C.border}`, borderRadius:6, padding:'8px 12px', fontSize:12, color:C.muted, wordBreak:'break-all', marginBottom:12 }}>
-                  {regLink}
+              {/* Right: Event info + Quick actions */}
+              <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                {/* Registration link */}
+                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:18}}>
+                  <h3 style={{fontSize:14,fontWeight:700,color:C.navy,margin:'0 0 12px'}}>🔗 رابط التسجيل</h3>
+                  <div style={{background:C.bg,borderRadius:6,padding:'10px 12px',fontSize:12,color:C.muted,wordBreak:'break-all',marginBottom:10}}>
+                    {regLink}
+                  </div>
+                  <button onClick={copyRegLink} style={{width:'100%',padding:'9px',border:'none',borderRadius:6,background:copied?C.green:C.orange,color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer',transition:'background 0.3s'}}>
+                    {copied?'✓ تم النسخ':'نسخ الرابط'}
+                  </button>
                 </div>
-                <button onClick={copyRegLink} style={{
-                  width:'100%', padding:'10px', border:'none', borderRadius:6,
-                  background: copied ? C.green : C.orange,
-                  color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer', transition:'background 0.2s'
-                }}>
-                  {copied ? '✓ تم نسخ الرابط' : '📋 نسخ الرابط'}
-                </button>
-              </div>
 
-              {/* Quick actions */}
-              <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:20, marginBottom:16 }}>
-                <h3 style={{ fontSize:14, fontWeight:700, color:C.navy, margin:'0 0 12px' }}>⚡ الإجراءات السريعة</h3>
-                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                  {[
-                    { label:'📷 فتح الماسح', action:()=>setTab('scanner'), color:C.orange, fill:true },
-                    { label:'👥 عرض الزوار الكامل', action:()=>setTab('attendees'), color:C.navy, fill:false },
-                    { label:'📊 الإحصاءات', action:()=>setTab('analytics'), color:C.navy, fill:false },
-                    { label:'⬇️ تصدير الزوار CSV', action:exportCSV, color:C.navy, fill:false },
-                  ].map(({ label, action, color, fill }) => (
-                    <button key={label} onClick={action} style={{
-                      width:'100%', padding:'10px', border:`1px solid ${fill?color:C.border}`, borderRadius:6,
-                      background: fill ? color : C.card,
-                      color: fill ? '#fff' : C.text,
-                      fontWeight:600, fontSize:13, cursor:'pointer', textAlign:'right'
-                    }}>
-                      {label}
+                {/* Quick actions */}
+                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:18}}>
+                  <h3 style={{fontSize:14,fontWeight:700,color:C.navy,margin:'0 0 12px'}}>⚡ إجراءات سريعة</h3>
+                  <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    <Link href="/scanner" style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'#FEF0ED',borderRadius:8,textDecoration:'none',fontWeight:600,fontSize:13,color:C.orange}}>
+                      <span style={{fontSize:18}}>📷</span>
+                      <div><p style={{margin:0,fontWeight:700}}>ماسح QR</p><p style={{margin:0,fontSize:11,color:C.muted}}>تسجيل دخول الزوار</p></div>
+                    </Link>
+                    <button onClick={exportCSV} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'#F3F0F8',borderRadius:8,border:'none',cursor:'pointer',fontWeight:600,fontSize:13,color:'#6B46C1',width:'100%',textAlign:'right'}}>
+                      <span style={{fontSize:18}}>📊</span>
+                      <div style={{textAlign:'right'}}><p style={{margin:0,fontWeight:700}}>تصدير Excel</p><p style={{margin:0,fontSize:11,color:C.muted}}>تحميل قائمة الزوار</p></div>
                     </button>
+                    <button onClick={()=>setTab('attendees')} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'#E8F0FA',borderRadius:8,border:'none',cursor:'pointer',fontWeight:600,fontSize:13,color:'#1A4A9A',width:'100%',textAlign:'right'}}>
+                      <span style={{fontSize:18}}>👥</span>
+                      <div style={{textAlign:'right'}}><p style={{margin:0,fontWeight:700}}>إدارة الزوار</p><p style={{margin:0,fontSize:11,color:C.muted}}>{counts.total} مسجّل</p></div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Event details */}
+                <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:18}}>
+                  <h3 style={{fontSize:14,fontWeight:700,color:C.navy,margin:'0 0 12px'}}>📋 تفاصيل الفعالية</h3>
+                  {[
+                    ['التاريخ',     event.start_date?new Date(event.start_date).toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'}):'—'],
+                    ['الموقع',      event.location||'—'],
+                    ['التصنيف',    event.category||'—'],
+                    ['الطاقة',      event.capacity?.toLocaleString('ar')||'غير محدودة'],
+                    ['الحالة',      STATUS_MAP[event.status]?.label||event.status],
+                  ].map(([k,v])=>(
+                    <div key={k} style={{display:'flex',gap:10,padding:'6px 0',borderBottom:`1px solid ${C.border}`}}>
+                      <span style={{fontSize:12,color:C.muted,minWidth:70}}>{k}</span>
+                      <span style={{fontSize:12,fontWeight:600,color:C.text}}>{v}</span>
+                    </div>
                   ))}
                 </div>
               </div>
-
-              {/* Online event URL */}
-              {event.event_url && (
-                <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:20 }}>
-                  <h3 style={{ fontSize:14, fontWeight:700, color:C.navy, margin:'0 0 10px' }}>💻 رابط البث</h3>
-                  <a href={event.event_url} target="_blank" rel="noopener noreferrer"
-                    style={{ color:C.orange, fontSize:13, wordBreak:'break-all' }}>
-                    {event.event_url}
-                  </a>
-                </div>
-              )}
             </div>
-          </div>
+          </>
         )}
 
-        {/* ═════ ATTENDEES TAB ═════ */}
-        {tab === 'attendees' && (
+        {/* ═══ TAB: ATTENDEES ═══ */}
+        {tab==='attendees' && (
           <div>
-            {/* Filters */}
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:'12px 16px', marginBottom:14, display:'flex', gap:12, flexWrap:'wrap', alignItems:'center' }}>
-              <input value={search} onChange={e=>setSearch(e.target.value)}
-                placeholder="🔍 بحث بالاسم أو البريد..."
-                style={{ padding:'8px 12px', border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, outline:'none', fontFamily:'inherit', color:C.text, background:C.bg, minWidth:220 }}/>
-              <div style={{ display:'flex', gap:6 }}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap',gap:10}}>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                <input value={search} onChange={e=>setSearch(e.target.value)}
+                  placeholder="🔍 بحث بالاسم أو البريد..."
+                  style={{padding:'8px 12px',border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,outline:'none',background:C.card,fontFamily:'inherit',color:C.text}}/>
                 {[['all','الكل'],['pending','منتظر'],['confirmed','مؤكد'],['attended','حضر'],['cancelled','ملغي']].map(([v,l])=>(
                   <button key={v} onClick={()=>setRegFilter(v)} style={{
-                    padding:'6px 14px', borderRadius:50, border:`1px solid ${regFilter===v?C.orange:C.border}`,
-                    background:regFilter===v?'#FEF0ED':C.card, color:regFilter===v?C.orange:C.text,
-                    fontSize:12, fontWeight:600, cursor:'pointer'
-                  }}>{l} {v!=='all'?`(${registrations.filter(r=>r.status===v).length})`:''}</button>
+                    padding:'7px 14px',borderRadius:50,fontSize:12,fontWeight:600,cursor:'pointer',border:'none',
+                    background:regFilter===v?C.orange:'#F8F7FA',
+                    color:regFilter===v?'#fff':C.muted}}>
+                    {l} {v==='all'?`(${counts.total})`:v==='attended'?`(${counts.attended})`:v==='pending'?`(${counts.pending})`:''}
+                  </button>
                 ))}
               </div>
-              <button onClick={exportCSV} style={{ marginRight:'auto', padding:'7px 14px', border:`1px solid ${C.border}`, borderRadius:6, background:C.card, color:C.text, fontWeight:600, fontSize:12, cursor:'pointer' }}>
-                ⬇️ تصدير CSV
+              <button onClick={exportCSV} style={{padding:'8px 16px',border:`1px solid ${C.border}`,borderRadius:6,background:C.card,fontSize:13,fontWeight:600,cursor:'pointer',color:C.text,display:'flex',alignItems:'center',gap:6}}>
+                ↓ تصدير CSV
               </button>
             </div>
 
-            {/* Table */}
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, overflow:'hidden' }}>
-              <div style={{ display:'grid', gridTemplateColumns:'2fr 2fr 1fr 1fr 120px', padding:'10px 16px', fontSize:11, fontWeight:700, color:C.muted, letterSpacing:'0.06em', textTransform:'uppercase', background:'#F9F8F6', borderBottom:`1px solid ${C.border}` }}>
-                <span>الاسم</span><span>التواصل</span><span>الحالة</span><span>التسجيل</span><span>إجراء</span>
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,overflow:'hidden'}}>
+              <div style={{display:'grid',gridTemplateColumns:'2fr 2fr 1fr 1fr 120px',padding:'10px 20px',fontSize:11,fontWeight:700,color:C.muted,letterSpacing:'0.06em',textTransform:'uppercase',background:'#F9F8F6'}}>
+                <span>الاسم</span><span>التواصل</span><span>تاريخ التسجيل</span><span>الحالة</span><span>إجراء</span>
               </div>
-
-              {filteredRegs.length === 0 ? (
-                <div style={{ padding:'40px', textAlign:'center', color:C.muted }}>
-                  <p style={{ fontSize:36, margin:'0 0 8px' }}>👥</p>
-                  <p>{search||regFilter!=='all' ? 'لا توجد نتائج' : 'لا يوجد مسجلون بعد'}</p>
+              {filteredRegs.length===0?(
+                <div style={{textAlign:'center',padding:'40px',color:C.muted}}>
+                  <p style={{fontSize:36,margin:'0 0 8px'}}>👥</p>
+                  <p>لا توجد نتائج</p>
                 </div>
-              ) : filteredRegs.map((r, i) => {
-                const rs = REG_STATUS[r.status] || REG_STATUS.pending
+              ):filteredRegs.map((r,i)=>{
+                const rs=REG_STATUS[r.status]||REG_STATUS.pending
                 return (
-                  <div key={r.id} style={{ display:'grid', gridTemplateColumns:'2fr 2fr 1fr 1fr 120px', padding:'12px 16px', alignItems:'center', borderBottom:i<filteredRegs.length-1?`1px solid ${C.border}`:'none', transition:'background 0.12s' }}
+                  <div key={r.id} style={{display:'grid',gridTemplateColumns:'2fr 2fr 1fr 1fr 120px',padding:'13px 20px',alignItems:'center',borderBottom:i<filteredRegs.length-1?`1px solid ${C.border}`:'none',transition:'background 0.12s'}}
                     onMouseEnter={e=>(e.currentTarget.style.background='#F8F7FA')}
                     onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
-                    <p style={{ fontWeight:700, fontSize:14, margin:0, color:C.navy }}>{r.guest_name||'—'}</p>
+                    <p style={{fontWeight:700,fontSize:13,margin:0,color:C.navy}}>{r.guest_name||'—'}</p>
                     <div>
-                      <p style={{ fontSize:12, color:C.text, margin:0 }}>{r.guest_email||'—'}</p>
-                      {r.guest_phone && <p style={{ fontSize:11, color:C.muted, margin:'2px 0 0' }}>{r.guest_phone}</p>}
+                      <p style={{fontSize:12,color:C.text,margin:0}}>{r.guest_email||'—'}</p>
+                      {r.guest_phone&&<p style={{fontSize:11,color:C.muted,margin:'2px 0 0'}}>{r.guest_phone}</p>}
                     </div>
-                    <span style={{ display:'inline-block', padding:'3px 10px', borderRadius:4, fontSize:11, fontWeight:600, background:rs.bg, color:rs.color }}>{rs.label}</span>
-                    <span style={{ fontSize:11, color:C.muted }}>{r.created_at ? new Date(r.created_at).toLocaleDateString('ar-SA') : '—'}</span>
-                    <div>
-                      {r.status !== 'attended' ? (
-                        <button onClick={() => checkIn(r.id, r.guest_name)} style={{ padding:'5px 12px', border:'none', borderRadius:6, background:'#EAF7E0', color:C.green, fontWeight:700, fontSize:11, cursor:'pointer' }}>
-                          ✓ تسجيل حضور
+                    <p style={{fontSize:11,color:C.muted,margin:0}}>{r.created_at?new Date(r.created_at).toLocaleDateString('ar-SA'):'—'}</p>
+                    <span style={{display:'inline-block',padding:'3px 10px',borderRadius:4,fontSize:11,fontWeight:600,background:rs.bg,color:rs.color}}>{rs.label}</span>
+                    <div style={{display:'flex',gap:6}}>
+                      {r.status!=='attended'&&(
+                        <button onClick={()=>manualCheckin(r.id)} disabled={checkinLoading===r.id} style={{padding:'5px 10px',border:'none',borderRadius:4,background:'#E8F8F0',color:C.green,fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                          {checkinLoading===r.id?'...':'✓ دخول'}
                         </button>
-                      ) : (
-                        <span style={{ fontSize:11, color:C.green, fontWeight:600 }}>✅ حضر</span>
                       )}
                     </div>
                   </div>
                 )
               })}
             </div>
-
-            {filteredRegs.length > 0 && (
-              <p style={{ fontSize:12, color:C.muted, marginTop:8, textAlign:'center' }}>
-                عرض {filteredRegs.length} من {count} مسجّل
-              </p>
-            )}
           </div>
         )}
 
-        {/* ═════ SCANNER TAB ═════ */}
-        {tab === 'scanner' && (
-          <div style={{ maxWidth:640, margin:'0 auto' }}>
-            <div style={{ background:C.card, border:`2px solid ${C.border}`, borderRadius:12, padding:28, marginBottom:16, textAlign:'center' }}>
-              <div style={{ fontSize:52, marginBottom:14 }}>📷</div>
-              <h2 style={{ fontSize:18, fontWeight:700, color:C.navy, margin:'0 0 6px' }}>ماسح تذاكر الفعالية</h2>
-              <p style={{ fontSize:13, color:C.muted, margin:'0 0 20px' }}>سيتحقق الماسح فقط من تذاكر هذه الفعالية</p>
-              <input ref={scanRef} value={qrInput}
-                onChange={e=>setQrInput(e.target.value)}
-                onKeyDown={e=>{ if(e.key==='Enter') handleScan() }}
-                placeholder="امسح رمز QR أو أدخله يدوياً..."
-                autoFocus
-                style={{ width:'100%', padding:'14px 18px', border:`2px solid ${qrInput?C.orange:C.border}`, borderRadius:10, fontSize:15, outline:'none', fontFamily:'inherit', color:C.navy, background:C.bg, boxSizing:'border-box' as const, textAlign:'center', letterSpacing:'0.1em', transition:'border-color 0.2s', marginBottom:12 }}
-              />
-              <button onClick={handleScan} disabled={scanLoading||!qrInput.trim()} style={{
-                width:'100%', padding:'12px', border:'none', borderRadius:8,
-                background:qrInput.trim()?C.orange:'#D1D5DB',
-                color:'#fff', fontWeight:700, fontSize:14, cursor:qrInput.trim()?'pointer':'not-allowed', transition:'background 0.2s'
-              }}>
-                {scanLoading ? 'جاري التحقق...' : 'تحقق من التذكرة'}
-              </button>
-              <p style={{ fontSize:11, color:C.muted, marginTop:10 }}>
-                💡 يمكن توصيل ماسح QR USB — يُدخل الرمز تلقائياً ويضغط Enter
-              </p>
-            </div>
-
-            {scanResult && (() => {
-              const ss = SCAN_STYLES[scanResult.type] || SCAN_STYLES.error
-              return (
-                <div style={{ background:ss.bg, border:`2px solid ${ss.border}`, borderRadius:12, padding:22, marginBottom:16, textAlign:'center' }}>
-                  <div style={{ fontSize:40, marginBottom:8 }}>{ss.icon}</div>
-                  <p style={{ fontSize:18, fontWeight:700, color:ss.color, margin:'0 0 6px' }}>{scanResult.msg}</p>
-                  {scanResult.name && <p style={{ fontSize:15, fontWeight:600, color:C.navy, margin:0 }}>{scanResult.name}</p>}
-                </div>
-              )
-            })()}
-
-            {scanHistory.length > 0 && (
-              <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, overflow:'hidden' }}>
-                <div style={{ padding:'12px 18px', borderBottom:`1px solid ${C.border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <h3 style={{ fontSize:14, fontWeight:700, margin:0, color:C.navy }}>آخر عمليات المسح</h3>
-                  <span style={{ fontSize:12, color:C.muted, background:C.bg, padding:'2px 10px', borderRadius:20, fontWeight:600 }}>{scanHistory.length}</span>
-                </div>
-                {scanHistory.map((h,i) => (
-                  <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 18px', borderBottom:i<scanHistory.length-1?`1px solid ${C.border}`:'none' }}>
-                    <span style={{ fontSize:16 }}>{h.type==='success'?'✅':'⚠️'}</span>
-                    <p style={{ fontWeight:600, fontSize:13, margin:0, color:C.navy, flex:1 }}>{h.name}</p>
-                    <span style={{ fontSize:11, color:C.muted }}>{h.time}</span>
+        {/* ═══ TAB: SCANNER ═══ */}
+        {tab==='scanner' && (
+          <div style={{maxWidth:600,margin:'0 auto',textAlign:'center',paddingTop:20}}>
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:32,marginBottom:16}}>
+              <div style={{fontSize:64,marginBottom:16}}>📷</div>
+              <h2 style={{fontSize:22,fontWeight:700,color:C.navy,margin:'0 0 8px'}}>ماسح QR — {event.title}</h2>
+              <p style={{color:C.muted,margin:'0 0 24px',lineHeight:1.6}}>افتح الماسح لتسجيل دخول الزوار باستخدام رموز QR الخاصة بتذاكرهم</p>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:20}}>
+                {[{icon:'✅',label:'حضروا',value:counts.attended,color:C.green,bg:'#EAF7E0'},{icon:'⏳',label:'لم يصلوا بعد',value:counts.total-counts.attended,color:'#B07000',bg:'#FFF8E8'}].map(({icon,label,value,color,bg})=>(
+                  <div key={label} style={{background:bg,borderRadius:8,padding:'16px',textAlign:'center'}}>
+                    <p style={{fontSize:28,fontWeight:800,color,margin:'0 0 4px'}}>{icon} {value}</p>
+                    <p style={{fontSize:12,color:C.muted,margin:0}}>{label}</p>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-
-        {/* ═════ ANALYTICS TAB ═════ */}
-        {tab === 'analytics' && (
-          <div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:20 }}>
-              {[
-                { label:'إجمالي المسجلين', value:count,            color:C.orange, icon:'🎟' },
-                { label:'حضروا',           value:attended,          color:C.green,  icon:'✅' },
-                { label:'لم يحضروا',       value:count-attended,    color:C.muted,  icon:'⏳' },
-                { label:'نسبة الحضور',     value:count>0?`${Math.round(attended/count*100)}%`:'0%', color:C.navy, icon:'📊' },
-              ].map(({ label, value, color, icon }) => (
-                <div key={label} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:'18px 20px' }}>
-                  <div style={{ fontSize:22, marginBottom:8 }}>{icon}</div>
-                  <p style={{ fontSize:28, fontWeight:800, color, margin:'0 0 4px' }}>{value}</p>
-                  <p style={{ fontSize:12, color:C.muted, margin:0 }}>{label}</p>
-                </div>
-              ))}
+              <Link href="/scanner" style={{display:'block',padding:'14px',border:'none',borderRadius:8,background:C.orange,color:'#fff',fontWeight:700,fontSize:16,textDecoration:'none',boxShadow:'0 4px 12px rgba(240,85,55,0.35)'}}>
+                📷 فتح الماسح الآن
+              </Link>
+              <p style={{fontSize:12,color:C.muted,marginTop:12}}>💡 يمكنك توصيل ماسح QR بالـ USB لتسريع عملية الدخول</p>
             </div>
 
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-              {/* Status breakdown */}
-              <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:22 }}>
-                <h2 style={{ fontSize:15, fontWeight:700, color:C.navy, margin:'0 0 16px' }}>توزيع الحالات</h2>
-                {Object.entries(REG_STATUS).map(([key, cfg]) => {
-                  const n = registrations.filter(r=>r.status===key).length
-                  const pct = count > 0 ? Math.round((n/count)*100) : 0
-                  return (
-                    <div key={key} style={{ marginBottom:12 }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                        <span style={{ fontSize:13, color:C.text, fontWeight:600 }}>{cfg.label}</span>
-                        <span style={{ fontSize:13, fontWeight:700, color:cfg.color }}>{n} ({pct}%)</span>
-                      </div>
-                      <div style={{ height:8, background:C.bg, borderRadius:4, overflow:'hidden', border:`1px solid ${C.border}` }}>
-                        <div style={{ height:'100%', background:cfg.color, width:`${pct}%`, borderRadius:4, transition:'width 0.5s' }}/>
-                      </div>
+            {/* Manual check-in */}
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:24}}>
+              <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:'0 0 14px'}}>تسجيل دخول يدوي</h3>
+              <div style={{display:'flex',flexDirection:'column',gap:8,maxHeight:300,overflowY:'auto'}}>
+                {regs.filter(r=>r.status!=='attended').slice(0,20).map(r=>(
+                  <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:C.bg,borderRadius:8}}>
+                    <div style={{textAlign:'right'}}>
+                      <p style={{fontWeight:700,fontSize:13,margin:0,color:C.navy}}>{r.guest_name||'—'}</p>
+                      <p style={{fontSize:11,color:C.muted,margin:'2px 0 0'}}>{r.guest_email||r.guest_phone||'—'}</p>
                     </div>
-                  )
-                })}
-              </div>
-
-              {/* Attendance donut */}
-              <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:22, textAlign:'center' }}>
-                <h2 style={{ fontSize:15, fontWeight:700, color:C.navy, margin:'0 0 16px' }}>معدل الحضور</h2>
-                {(() => {
-                  const pct = count > 0 ? Math.round((attended/count)*100) : 0
-                  const r = 56, circ = 2 * Math.PI * r
-                  return (
-                    <div style={{ position:'relative', width:140, height:140, margin:'0 auto 14px' }}>
-                      <svg viewBox="0 0 140 140">
-                        <circle cx="70" cy="70" r={r} fill="none" stroke={C.border} strokeWidth="14"/>
-                        <circle cx="70" cy="70" r={r} fill="none" stroke={C.orange} strokeWidth="14"
-                          strokeLinecap="round" strokeDasharray={`${(pct/100)*circ} ${circ}`} transform="rotate(-90 70 70)"/>
-                      </svg>
-                      <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}>
-                        <span style={{ fontSize:26, fontWeight:800, color:C.navy }}>{pct}%</span>
-                        <span style={{ fontSize:11, color:C.muted }}>حضور</span>
-                      </div>
-                    </div>
-                  )
-                })()}
-                <p style={{ color:C.muted, fontSize:13 }}>{attended} من {count} مسجّل</p>
-                {event.capacity && (
-                  <p style={{ color:C.muted, fontSize:12 }}>نسبة الامتلاء: {fillRate}%</p>
+                    <button onClick={()=>manualCheckin(r.id)} disabled={checkinLoading===r.id} style={{padding:'6px 14px',border:'none',borderRadius:6,background:C.green,color:'#fff',fontWeight:700,fontSize:12,cursor:'pointer'}}>
+                      {checkinLoading===r.id?'...':'✓ تسجيل دخول'}
+                    </button>
+                  </div>
+                ))}
+                {regs.filter(r=>r.status!=='attended').length===0&&(
+                  <div style={{textAlign:'center',padding:'20px 0',color:C.muted}}>
+                    <p>✅ جميع المسجلين سجّلوا دخولهم</p>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         )}
 
-        {/* ═════ SETTINGS TAB ═════ */}
-        {tab === 'settings' && (
-          <div style={{ maxWidth:600 }}>
-            {/* Status change */}
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:22, marginBottom:16 }}>
-              <h2 style={{ fontSize:15, fontWeight:700, color:C.navy, margin:'0 0 14px' }}>حالة الفعالية</h2>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:16 }}>
-                {[
-                  { val:'draft',     label:'مسودة',   desc:'غير منشورة' },
-                  { val:'published', label:'منشور',   desc:'متاحة للعامة' },
-                  { val:'completed', label:'مكتملة',  desc:'انتهت الفعالية' },
-                  { val:'cancelled', label:'ملغاة',   desc:'تم الإلغاء' },
-                ].map(({ val, label, desc }) => {
-                  const cfg = STATUS_CONFIG[val] || STATUS_CONFIG.draft
-                  return (
-                    <div key={val} onClick={() => setNewStatus(val)} style={{ padding:14, borderRadius:8, cursor:'pointer', border:`2px solid ${newStatus===val?cfg.color:C.border}`, background:newStatus===val?cfg.bg:C.card, transition:'all 0.15s' }}>
-                      <p style={{ fontWeight:700, color:newStatus===val?cfg.color:C.text, margin:'0 0 3px', fontSize:14 }}>{label}</p>
-                      <p style={{ fontSize:11, color:C.muted, margin:0 }}>{desc}</p>
-                    </div>
-                  )
-                })}
+        {/* ═══ TAB: SETTINGS ═══ */}
+        {tab==='settings' && (
+          <div style={{maxWidth:560}}>
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:24,marginBottom:16}}>
+              <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:'0 0 16px'}}>تغيير حالة الفعالية</h3>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                {[['published','🟢 نشر الفعالية'],['draft','📝 رجوع لمسودة'],['completed','✅ إنهاء الفعالية'],['cancelled','❌ إلغاء الفعالية']].map(([v,l])=>(
+                  <button key={v} onClick={()=>changeStatus(v)} disabled={event.status===v||statusSaving}
+                    style={{padding:'10px',border:`1px solid ${event.status===v?STATUS_MAP[v]?.color||C.border:C.border}`,borderRadius:8,
+                      background:event.status===v?(STATUS_MAP[v]?.bg||C.bg):C.bg,
+                      color:event.status===v?(STATUS_MAP[v]?.color||C.text):C.text,
+                      fontWeight:600,fontSize:13,cursor:event.status===v?'not-allowed':'pointer',
+                      opacity:event.status===v?0.7:1}}>
+                    {l}
+                  </button>
+                ))}
               </div>
-              <button onClick={saveSettings} disabled={saving} style={{
-                padding:'10px 24px', border:'none', borderRadius:6,
-                background:saving?C.muted:C.orange, color:'#fff',
-                fontWeight:700, fontSize:14, cursor:'pointer'
-              }}>
-                {saving ? 'جاري الحفظ...' : 'حفظ الحالة'}
+            </div>
+
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:8,padding:24,marginBottom:16}}>
+              <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:'0 0 4px'}}>رابط التسجيل</h3>
+              <p style={{fontSize:13,color:C.muted,margin:'0 0 12px'}}>شارك هذا الرابط مع الزوار ليتمكنوا من التسجيل</p>
+              <div style={{background:C.bg,borderRadius:6,padding:'10px 12px',fontSize:12,color:C.muted,wordBreak:'break-all',marginBottom:10}}>{regLink}</div>
+              <button onClick={copyRegLink} style={{width:'100%',padding:'10px',border:'none',borderRadius:6,background:copied?C.green:C.orange,color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer',transition:'background 0.3s'}}>
+                {copied?'✓ تم النسخ':'📋 نسخ الرابط'}
               </button>
             </div>
 
-            {/* Event info summary */}
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:22, marginBottom:16 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-                <h2 style={{ fontSize:15, fontWeight:700, color:C.navy, margin:0 }}>معلومات الفعالية</h2>
-                <Link href={`/events/${id}/edit`} style={{ color:C.orange, fontSize:13, fontWeight:600, textDecoration:'none' }}>تعديل ✏️</Link>
-              </div>
-              {[
-                ['العنوان', event.title],
-                ['الموقع', event.location||'—'],
-                ['تاريخ البداية', event.start_date?new Date(event.start_date).toLocaleDateString('ar-SA'):'—'],
-                ['الطاقة', event.capacity||'غير محدودة'],
-              ].map(([k,v]) => (
-                <div key={k} style={{ display:'flex', gap:12, padding:'8px 0', borderBottom:`1px solid ${C.border}` }}>
-                  <span style={{ fontSize:13, color:C.muted, minWidth:120 }}>{k}</span>
-                  <span style={{ fontSize:13, fontWeight:600, color:C.text }}>{v}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Danger zone */}
-            <div style={{ background:'#FEF2F2', border:`1px solid #FECACA`, borderRadius:8, padding:22 }}>
-              <h2 style={{ fontSize:15, fontWeight:700, color:'#B91C1C', margin:'0 0 10px' }}>⚠️ منطقة الخطر</h2>
-              <p style={{ fontSize:13, color:'#7F1D1D', margin:'0 0 14px' }}>هذه الإجراءات لا يمكن التراجع عنها</p>
-              <button onClick={async () => {
-                if (!confirm('هل أنت متأكد من إلغاء هذه الفعالية؟')) return
-                await sb.from('events').update({ status:'cancelled' }).eq('id', id)
-                setEvent((e: any) => ({ ...e, status:'cancelled' }))
-                setNewStatus('cancelled')
-              }} style={{ padding:'8px 18px', border:'1px solid #FECACA', borderRadius:6, background:'#FEF2F2', color:'#B91C1C', fontWeight:600, fontSize:13, cursor:'pointer' }}>
+            <div style={{background:'#FEF2F2',border:'1px solid #DC2626',borderRadius:8,padding:20}}>
+              <h3 style={{fontSize:15,fontWeight:700,color:'#DC2626',margin:'0 0 8px'}}>منطقة الخطر</h3>
+              <p style={{fontSize:13,color:'#B91C1C',margin:'0 0 14px'}}>هذه الإجراءات لا يمكن التراجع عنها</p>
+              <button onClick={()=>changeStatus('cancelled')} disabled={event.status==='cancelled'} style={{padding:'9px 20px',border:'1px solid #DC2626',borderRadius:6,background:'#fff',color:'#DC2626',fontWeight:700,fontSize:13,cursor:'pointer'}}>
                 إلغاء الفعالية
               </button>
             </div>
           </div>
         )}
+
       </div>
     </div>
   )
