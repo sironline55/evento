@@ -44,11 +44,11 @@ type Ticket = { id:number; name:string; type:'free'|'paid'; price:string; qty:st
 type AgendaItem  = { time:string; title:string; speaker:string }
 type LineupMember = { name:string; role:string; bio:string }
 
-function EventPreview({ title, subtitle, category, subcategory, startDate, startTime, endTime,
+function EventPreview({ title, subtitle, category, subcategory, startDate, startTime, endDate, endTime,
   locationType, location, eventUrl, description, highlights, ageInfo, doorTime,
   parking, tickets, coverPreview, mode }: {
   title:string; subtitle:string; category:string; subcategory:string
-  startDate:string; startTime:string; endTime:string; locationType:string
+  startDate:string; startTime:string; endDate:string; endTime:string; locationType:string
   location:string; eventUrl:string; description:string; highlights:string
   ageInfo:string; doorTime:string; parking:string; tickets:Ticket[]
   coverPreview:string|null; mode:'mobile'|'desktop'
