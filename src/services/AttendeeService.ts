@@ -1,114 +1,76 @@
-import { BaseService } from './BaseService';
-import { Attendee } from '../types';
-import { PlanService } from './PlanService';
+import { createBrowserClient } from '@supabase/ssr'
+import { Registration } from '../types'
 
-export class AttendeeService extends BaseService {
-  async getAll(): Promise<Attendee[]> {
-    const { data, error } = await this.supabase
-      .from('attendees')
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+export class AttendeeService {
+  /** جلب كل المسجلين لفعالية */
+  async getByEvent(eventId: string): Promise<Registration[]> {
+    const { data, error } = await supabase
+      .from('registrations')
       .select('*')
-      .order('registeredAt', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return data || []
   }
 
-  async getById(id: string): Promise<Attendee | null> {
-    const { data, error } = await this.supabase
-      .from('attendees')
+  /** جلب مسجل واحد */
+  async getById(id: string): Promise<Registration | null> {
+    const { data, error } = await supabase
+      .from('registrations')
       .select('*')
       .eq('id', id)
-      .single();
-
-    if (error) return null;
-    return data;
+      .single()
+    if (error) return null
+    return data
   }
 
-  async getByEvent(eventId: string): Promise<Attendee[]> {
-    const { data, error } = await this.supabase
-      .from('attendees')
-      .select('*')
-      .eq('eventId', eventId)
-      .order('registeredAt', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
-  }
-
-  async getByUser(userId: string): Promise<Attendee[]> {
-    const { data, error } = await this.supabase
-      .from('attendees')
-      .select('*')
-      .eq('userId', userId)
-      .order('registeredAt', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
-  }
-
-  /**
-   * [AR] تسجيل مسجل جديد في حدث مع فحص الحدود
-   * [EN] Register a new attendee with subscription limit checking
-   */
-  async register(eventId: string, userId: string, accountId?: string): Promise<{ success: boolean; data?: Attendee; error?: string }> {
-    // If accountId provided, check subscription limits
-    if (accountId) {
-      const planService = new PlanService();
-      const limit = await planService.checkAttendeeLimit(accountId, eventId);
-      
-      if (!limit.allowed) {
-        return {
-          success: false,
-          error: `وصلت إلى الحد الأقصى للمسجلين في خطتك (${limit.current}/${limit.max}). يرجى الترقية.`,
-        };
-      }
+  /** تحديث حالة المسجل */
+  async updateStatus(
+    id: string,
+    status: Registration['status'],
+    checked_in_at?: string
+  ): Promise<Registration> {
+    const updates: Partial<Registration> = { status }
+    if (status === 'attended' && checked_in_at) {
+      updates.checked_in_at = checked_in_at
+      updates.check_in_method = 'manual'
     }
-
-    const { data, error } = await this.supabase
-      .from('attendees')
-      .insert({
-        eventId,
-        userId,
-        status: 'registered',
-        registeredAt: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    if (accountId) {
-      await this.logActivity(accountId, 'attendee.register', { eventId, attendeeId: data.id });
-    }
-
-    return { success: true, data };
-  }
-
-  async updateStatus(id: string, status: Attendee['status'], attendedAt?: string): Promise<Attendee> {
-    const updates: Partial<Attendee> = { status };
-    if (status === 'attended' && attendedAt) {
-      updates.attendedAt = attendedAt;
-    }
-
-    const { data, error } = await this.supabase
-      .from('attendees')
+    const { data, error } = await supabase
+      .from('registrations')
       .update(updates)
       .eq('id', id)
       .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+      .single()
+    if (error) throw error
+    return data
   }
 
+  /** إلغاء تسجيل */
   async cancel(id: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('attendees')
+    const { error } = await supabase
+      .from('registrations')
       .update({ status: 'cancelled' })
-      .eq('id', id);
+      .eq('id', id)
+    if (error) throw error
+  }
 
-    if (error) throw error;
+  /** إحصائيات سريعة */
+  async getStats(eventId: string) {
+    const { data } = await supabase
+      .from('registrations')
+      .select('status')
+      .eq('event_id', eventId)
+    const list = data || []
+    return {
+      total: list.length,
+      attended: list.filter(r => r.status === 'attended').length,
+      registered: list.filter(r => r.status === 'registered').length,
+      cancelled: list.filter(r => r.status === 'cancelled').length,
+    }
   }
 }
