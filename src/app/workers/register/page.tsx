@@ -57,10 +57,10 @@ export default function WorkerRegisterPage() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f0f9f6 0%, #e8f4f0 100%)' }} dir="rtl">
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #FBF8F5 0%, #F3F0F8 100%)' }} dir="rtl">
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '32px 16px' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 56, height: 56, background: '#2B6E64', borderRadius: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+          <div style={{ width: 56, height: 56, background: '#F05537', borderRadius: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
             <span style={{ fontSize: 28 }}>👤</span>
           </div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>سجّل للعمل في الفعاليات</h1>
@@ -70,7 +70,7 @@ export default function WorkerRegisterPage() {
         <div style={{ background: '#fff', borderRadius: 20, padding: 28, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
             {[1, 2, 3].map(s => (
-              <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: step >= s ? '#2B6E64' : '#e5e7eb', transition: 'background 0.3s' }} />
+              <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: step >= s ? '#F05537' : '#e5e7eb', transition: 'background 0.3s' }} />
             ))}
           </div>
 
@@ -89,11 +89,11 @@ export default function WorkerRegisterPage() {
               </select>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <button onClick={() => setForm({...form, gender: 'male'})}
-                  style={{ ...gBtn, background: form.gender === 'male' ? '#2B6E64' : '#f3f4f6', color: form.gender === 'male' ? '#fff' : '#374151' }}>
+                  style={{ ...gBtn, background: form.gender === 'male' ? '#F05537' : '#f3f4f6', color: form.gender === 'male' ? '#fff' : '#374151' }}>
                   ذكر
                 </button>
                 <button onClick={() => setForm({...form, gender: 'female'})}
-                  style={{ ...gBtn, background: form.gender === 'female' ? '#2B6E64' : '#f3f4f6', color: form.gender === 'female' ? '#fff' : '#374151' }}>
+                  style={{ ...gBtn, background: form.gender === 'female' ? '#F05537' : '#f3f4f6', color: form.gender === 'female' ? '#fff' : '#374151' }}>
                   أنثى
                 </button>
               </div>
@@ -112,7 +112,7 @@ export default function WorkerRegisterPage() {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {SKILLS.map(s => (
                     <button key={s} onClick={() => setForm({...form, skills: toggle(form.skills, s)})}
-                      style={{ ...tag, background: form.skills.includes(s) ? '#2B6E64' : '#f3f4f6', color: form.skills.includes(s) ? '#fff' : '#374151' }}>
+                      style={{ ...tag, background: form.skills.includes(s) ? '#F05537' : '#f3f4f6', color: form.skills.includes(s) ? '#fff' : '#374151' }}>
                       {s}
                     </button>
                   ))}
@@ -123,7 +123,7 @@ export default function WorkerRegisterPage() {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {EVENT_TYPES.map(e => (
                     <button key={e} onClick={() => setForm({...form, event_types: toggle(form.event_types, e)})}
-                      style={{ ...tag, background: form.event_types.includes(e) ? '#2B6E64' : '#f3f4f6', color: form.event_types.includes(e) ? '#fff' : '#374151' }}>
+                      style={{ ...tag, background: form.event_types.includes(e) ? '#F05537' : '#f3f4f6', color: form.event_types.includes(e) ? '#fff' : '#374151' }}>
                       {e}
                     </button>
                   ))}
@@ -154,7 +154,7 @@ export default function WorkerRegisterPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {DAYS.map(d => (
                     <button key={d.key} onClick={() => setForm({...form, availability: toggle(form.availability, d.key)})}
-                      style={{ ...tag, background: form.availability.includes(d.key) ? '#2B6E64' : '#f3f4f6', color: form.availability.includes(d.key) ? '#fff' : '#374151', textAlign: 'center' }}>
+                      style={{ ...tag, background: form.availability.includes(d.key) ? '#F05537' : '#f3f4f6', color: form.availability.includes(d.key) ? '#fff' : '#374151', textAlign: 'center' }}>
                       {d.label}
                     </button>
                   ))}
@@ -166,9 +166,9 @@ export default function WorkerRegisterPage() {
                   style={{...inp, marginTop: 8}} type="number" min="50" max="2000" />
                 <p style={{ fontSize: 12, color: '#999', marginTop: 4 }}>متوسط السوق: 150-300 ريال/يوم</p>
               </div>
-              <div style={{ background: '#f0f9f6', borderRadius: 12, padding: 16, border: '1px solid #d1fae5' }}>
-                <p style={{ fontSize: 13, color: '#065f46', fontWeight: 500 }}>✅ بياناتك محمية ومؤمنة</p>
-                <p style={{ fontSize: 12, color: '#047857', marginTop: 4 }}>لن نشارك بياناتك مع أي جهة دون موافقتك. ستتلقى إشعارات فقط عند توفر فرصة مناسبة.</p>
+              <div style={{ background: '#FBF8F5', borderRadius: 12, padding: 16, border: '1px solid #DBDAE3' }}>
+                <p style={{ fontSize: 13, color: '#C45800', fontWeight: 500 }}>✅ بياناتك محمية ومؤمنة</p>
+                <p style={{ fontSize: 12, color: '#C45800', marginTop: 4 }}>لن نشارك بياناتك مع أي جهة دون موافقتك. ستتلقى إشعارات فقط عند توفر فرصة مناسبة.</p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setStep(2)} style={backBtn}>← السابق</button>
@@ -182,7 +182,7 @@ export default function WorkerRegisterPage() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#9ca3af' }}>
-          هل أنت شركة فعاليات؟ <a href="/workers/companies" style={{ color: '#2B6E64' }}>سجّل هنا</a>
+          هل أنت شركة فعاليات؟ <a href="/workers/companies" style={{ color: '#F05537' }}>سجّل هنا</a>
         </p>
       </div>
     </div>
@@ -190,7 +190,7 @@ export default function WorkerRegisterPage() {
 }
 
 const inp: React.CSSProperties = { padding: '12px 16px', border: '1px solid #e5e7eb', borderRadius: 10, fontSize: 15, width: '100%', outline: 'none', background: '#fafafa', boxSizing: 'border-box', fontFamily: 'inherit' }
-const nextBtn: React.CSSProperties = { background: '#2B6E64', color: '#fff', padding: '14px 24px', borderRadius: 12, border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '100%' }
+const nextBtn: React.CSSProperties = { background: '#F05537', color: '#fff', padding: '14px 24px', borderRadius: 12, border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '100%' }
 const backBtn: React.CSSProperties = { background: '#f3f4f6', color: '#374151', padding: '14px 20px', borderRadius: 12, border: 'none', fontSize: 14, cursor: 'pointer' }
 const gBtn: React.CSSProperties = { padding: '12px', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 15, cursor: 'pointer', fontWeight: 500 }
 const tag: React.CSSProperties = { padding: '8px 14px', borderRadius: 20, border: 'none', fontSize: 13, cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }
