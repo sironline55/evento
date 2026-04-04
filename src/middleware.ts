@@ -23,6 +23,12 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
+  const hasCode = request.nextUrl.searchParams.has('code')
+
+  // صفحات OAuth callback — اتركها تمر بدون تدخل
+  if (path.startsWith('/auth/callback') || hasCode) {
+    return supabaseResponse
+  }
 
   const isAuthPage = path.startsWith('/login') || path.startsWith('/register')
   const isPublic =
@@ -34,14 +40,14 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/api') ||
     path.includes('.')
 
-  // مسجل دخول ويحاول الوصول لصفحة auth → حوّله للـ dashboard
+  // مسجل دخول + صفحة auth → للـ dashboard
   if (user && isAuthPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/events'
     return NextResponse.redirect(url)
   }
 
-  // غير مسجل ويحاول الوصول لصفحة محمية → حوّله للـ login
+  // غير مسجل + صفحة محمية → للـ login
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
