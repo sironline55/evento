@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { QrCode, Download } from 'lucide-react';
-import QRCode from 'qrcode';
+import * as QRCode from 'qrcode';
 import * as XLSX from 'xlsx';
 
 export default function AttendeesPage() {

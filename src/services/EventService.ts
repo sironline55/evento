@@ -1,4 +1,4 @@
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 import { BaseService } from './BaseService';
 import { Event, EventStats, TicketType } from '../types';
 
