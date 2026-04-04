@@ -24,16 +24,24 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
+  const isAuthPage = path.startsWith('/login') || path.startsWith('/register')
   const isPublic =
     path === '/' ||
-    path.startsWith('/login') ||
-    path.startsWith('/register') ||
+    isAuthPage ||
     path.startsWith('/workers') ||
     path.startsWith('/r/') ||
     path.startsWith('/_next') ||
     path.startsWith('/api') ||
     path.includes('.')
 
+  // مسجل دخول ويحاول الوصول لصفحة auth → حوّله للـ dashboard
+  if (user && isAuthPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/events'
+    return NextResponse.redirect(url)
+  }
+
+  // غير مسجل ويحاول الوصول لصفحة محمية → حوّله للـ login
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
