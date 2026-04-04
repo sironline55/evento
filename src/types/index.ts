@@ -55,6 +55,10 @@ export type Attendee = Registration & {
   name?: string
   eventId?: string
   userId?: string
+  attendedAt?: string
+  registeredAt?: string
+  company?: string
+  ticketType?: string
 }
 
 export interface AuthUser {
@@ -109,9 +113,37 @@ export interface SubscriptionPlan {
   updated_at: string
 }
 
+export interface AccountSubscription {
+  id: string
+  account_id: string
+  plan_id: string
+  status: 'active' | 'cancelled' | 'expired' | 'trial'
+  trial_ends_at: string | null
+  current_period_start: string
+  current_period_end: string
+  payment_ref: string | null
+  cancelled_at: string | null
+  created_at: string
+  plan?: SubscriptionPlan
+}
+
+export interface PlanUsageStats {
+  plan: SubscriptionPlan
+  current_events: number
+  current_attendees: number
+  current_sms: number
+  current_team_members: number
+  period_end: string
+}
+
 export interface AttendeeLimit {
   allowed: boolean
   current: number
   max: number | null
   percentage: number
+}
+
+export interface TicketType {
+  label: string
+  price: number
 }
