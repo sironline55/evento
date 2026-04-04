@@ -1,4 +1,3 @@
-
 'use client'
 import { createBrowserClient } from '@supabase/ssr'
 
@@ -33,7 +32,7 @@ export class WorkerService {
         is_available: true,
         rating: 0,
         total_jobs: 0,
-        status: 'pending'
+        status: 'active'
       })
       .select()
       .single()
@@ -55,7 +54,7 @@ export class WorkerService {
     let query = supabase
       .from('worker_profiles')
       .select('*')
-      .eq('status', 'active')
+      .in('status', ['active', 'pending'])
     if (filters.city) query = query.eq('city', filters.city)
     if (filters.gender && filters.gender !== 'any') query = query.eq('gender', filters.gender)
     if (filters.min_rate) query = query.gte('daily_rate', filters.min_rate)
@@ -68,24 +67,22 @@ export class WorkerService {
     return data || []
   }
 
-  /** تحديث opt-in من زائر فعالية */
-  static async optInFromAttendee(attendeeId: string, workerData: {
-    city: string
-    gender: 'male' | 'female'
-    daily_rate: number
-    skills: string[]
-    availability: string[]
-  }) {
-    const { data: attendee } = await supabase
-      .from('attendees')
-      .select('full_name, email, phone')
-      .eq('id', attendeeId)
-      .single()
-    if (!attendee) throw new Error('Attendee not found')
+  /** opt-in من زائر فعالية - يقبل البيانات مباشرة بدون جدول attendees */
+  static async optInFromAttendee(
+    attendeeId: string,
+    attendeeData: { full_name: string; phone: string; email?: string },
+    workerData: {
+      city: string
+      gender: 'male' | 'female'
+      daily_rate: number
+      skills: string[]
+      availability: string[]
+    }
+  ) {
     return this.register({
-      full_name: attendee.full_name,
-      phone: attendee.phone || '',
-      email: attendee.email,
+      full_name: attendeeData.full_name,
+      phone: attendeeData.phone,
+      email: attendeeData.email,
       ...workerData,
       experience_years: 0,
       event_types: ['general'],
@@ -112,7 +109,7 @@ export class WorkerService {
 
   /** طلب توظيف جديد */
   static async createRequest(data: {
-    account_id: string
+    account_id?: string
     event_id?: string
     title: string
     city: string
