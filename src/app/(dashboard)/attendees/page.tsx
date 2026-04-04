@@ -1,35 +1,129 @@
 'use client'
-import{useEffect,useState}from 'react'
-import{createBrowserClient}from '@supabase/ssr'
-export default function AttendeesPage(){
-  const[att,setAtt]=useState<any[]>([])
-  const[loading,setL]=useState(true)
-  const[search,setSearch]=useState('')
-  const sb=createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-  useEffect(()=>{sb.from('attendees').select('id,full_name,email,phone,company,status,created_at,events(name)').order('created_at',{ascending:false}).limit(100).then(({data})=>{setAtt(data||[]);setL(false)})},[])
-  const f=att.filter(a=>!search||a.full_name?.toLowerCase().includes(search.toLowerCase())||a.phone?.includes(search))
-  return(
-    <div style={{padding:24,direction:'rtl'}}>
-      <h1 style={{fontSize:24,fontWeight:700,marginBottom:8}}>الزوار المسجلون</h1>
-      <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="بحث بالاسم أو الجوال..." style={{width:'100%',maxWidth:400,padding:'10px 14px',border:'1px solid #e5e7eb',borderRadius:10,fontSize:14,marginBottom:16,outline:'none',boxSizing:'border-box' as const,fontFamily:'inherit'}}/>
-      {loading?<div style={{textAlign:'center',padding:60,color:'#666'}}>جاري التحميل...</div>
-      :f.length===0?<div style={{textAlign:'center',padding:60,background:'#fff',borderRadius:16,border:'1px solid #f0f0f0',color:'#999'}}><p style={{fontSize:40,margin:'0 0 12px'}}>👥</p><p style={{fontWeight:600}}>لا توجد نتائج</p></div>
-      :(
-        <div style={{background:'#fff',borderRadius:16,border:'1px solid #f0f0f0',overflow:'hidden'}}>
-          <div style={{padding:'10px 16px',background:'#f9fafb',display:'grid',gridTemplateColumns:'2fr 1.5fr 1fr 1fr',gap:12,fontSize:12,fontWeight:600,color:'#6b7280'}}>
-            <span>الاسم</span><span>الفعالية</span><span>الجوال</span><span>الحالة</span>
+import { useEffect, useState } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
+import Link from 'next/link'
+
+const sb = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+const C = {
+  navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
+  muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF'
+}
+
+const STATUS_CONFIG: Record<string,{label:string;bg:string;color:string}> = {
+  pending:   {label:'قيد الانتظار', bg:'#FFF8E8', color:'#B07000'},
+  confirmed: {label:'مؤكد',         bg:'#E8F8F0', color:'#1A7A4A'},
+  attended:  {label:'حضر',          bg:'#E8F0F8', color:'#1A4A7A'},
+  cancelled: {label:'ملغي',         bg:'#FEF2F2', color:'#DC2626'},
+}
+
+export default function AttendeesPage() {
+  const [regs, setRegs]       = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch]   = useState('')
+  const [filter, setFilter]   = useState('all')
+
+  useEffect(() => {
+    sb.from('registrations')
+      .select('id,guest_name,guest_email,guest_phone,status,created_at,event_id,events(title)')
+      .order('created_at', { ascending: false })
+      .limit(200)
+      .then(({ data }) => { setRegs(data || []); setLoading(false) })
+  }, [])
+
+  const filtered = regs.filter(r => {
+    const matchSearch = !search
+      || r.guest_name?.toLowerCase().includes(search.toLowerCase())
+      || r.guest_email?.toLowerCase().includes(search.toLowerCase())
+    const matchFilter = filter === 'all' || r.status === filter
+    return matchSearch && matchFilter
+  })
+
+  return (
+    <div style={{ minHeight:'100vh', background:C.bg, direction:'rtl' }}>
+      {/* Header */}
+      <div style={{ background:C.card, borderBottom:`1px solid ${C.border}`, padding:'24px 32px 0' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+          <div>
+            <h1 style={{ fontSize:40, fontWeight:800, margin:0, color:C.navy, letterSpacing:'-1px' }}>الزوار</h1>
+            <p style={{ color:C.muted, fontSize:13, marginTop:4 }}>{regs.length} تسجيل إجمالاً</p>
           </div>
-          {f.map((a,i)=>(
-            <div key={a.id} style={{padding:'12px 16px',display:'grid',gridTemplateColumns:'2fr 1.5fr 1fr 1fr',gap:12,alignItems:'center',borderTop:i>0?'1px solid #f3f4f6':'none'}}>
-              <div><p style={{fontWeight:600,margin:0,fontSize:14}}>{a.full_name}</p>{a.company&&<p style={{color:'#666',margin:0,fontSize:12}}>{a.company}</p>}</div>
-              <span style={{color:'#666',fontSize:13}}>{(a.events as any)?.name||'—'}</span>
-              <span style={{color:'#666',fontSize:13}}>{a.phone||a.email||'—'}</span>
-              <span style={{padding:'2px 8px',borderRadius:20,fontSize:11,display:'inline-block',background:a.status==='checked_in'?'#dcfce7':'#f3f4f6',color:a.status==='checked_in'?'#166534':'#374151'}}>{a.status==='checked_in'?'دخل':'مسجل'}</span>
-            </div>
-          ))}
-          <div style={{padding:'8px 16px',background:'#f9fafb',fontSize:12,color:'#666',borderTop:'1px solid #f3f4f6'}}>إجمالي: {f.length} زائر</div>
         </div>
-      )}
+        {/* Tabs */}
+        <div style={{ display:'flex' }}>
+          {[['all','الكل'],['pending','قيد الانتظار'],['confirmed','مؤكد'],['attended','حضر'],['cancelled','ملغي']].map(([v,l])=>(
+            <button key={v} onClick={()=>setFilter(v)} style={{
+              padding:'10px 18px', background:'none', border:'none', cursor:'pointer', fontSize:13,
+              fontWeight:filter===v?700:400,
+              color:filter===v?C.orange:C.muted,
+              borderBottom:filter===v?`2px solid ${C.orange}`:'2px solid transparent',
+              transition:'all 0.15s', marginBottom:-1
+            }}>{l} {v!=='all'&&`(${regs.filter(r=>r.status===v).length})`}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Search */}
+      <div style={{ background:C.card, padding:'10px 32px', borderBottom:`1px solid ${C.border}` }}>
+        <input value={search} onChange={e=>setSearch(e.target.value)}
+          placeholder="🔍 بحث باسم الزائر أو البريد..."
+          style={{ padding:'8px 14px', border:`1px solid ${C.border}`, borderRadius:6, fontSize:13,
+            outline:'none', background:C.bg, fontFamily:'inherit', color:C.text, width:280 }}/>
+      </div>
+
+      {/* Table */}
+      <div style={{ padding:'0 32px 40px' }}>
+        {loading ? (
+          <div style={{ textAlign:'center', padding:'80px 0', color:C.muted }}>جاري التحميل...</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'60px 0' }}>
+            <div style={{ fontSize:56, marginBottom:16 }}>👥</div>
+            <h2 style={{ fontSize:20, fontWeight:700, color:C.navy, margin:'0 0 8px' }}>لا يوجد زوار بعد</h2>
+            <p style={{ color:C.muted }}>سيظهر المسجلون هنا بعد إضافة فعاليات</p>
+          </div>
+        ) : (
+          <>
+            <div style={{ display:'grid', gridTemplateColumns:'2fr 2fr 1fr 1fr 100px',
+              padding:'10px 16px', fontSize:11, fontWeight:700, color:C.muted,
+              letterSpacing:'0.06em', textTransform:'uppercase',
+              borderBottom:`1px solid ${C.border}`, marginTop:8 }}>
+              <span>الاسم</span><span>البريد / الهاتف</span><span>الفعالية</span><span>التاريخ</span><span>الحالة</span>
+            </div>
+            {filtered.map((r,i) => {
+              const s = STATUS_CONFIG[r.status] || STATUS_CONFIG.pending
+              return (
+                <div key={r.id} style={{ display:'grid', gridTemplateColumns:'2fr 2fr 1fr 1fr 100px',
+                  padding:'13px 16px', alignItems:'center',
+                  borderBottom:`1px solid ${C.border}`, background:C.card,
+                  transition:'background 0.12s', cursor:'default' }}
+                  onMouseEnter={e=>(e.currentTarget.style.background='#F8F7FA')}
+                  onMouseLeave={e=>(e.currentTarget.style.background=C.card)}>
+                  <div>
+                    <p style={{ fontWeight:700, fontSize:14, margin:0, color:C.navy }}>{r.guest_name||'—'}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize:12, color:C.text, margin:0 }}>{r.guest_email||'—'}</p>
+                    {r.guest_phone && <p style={{ fontSize:11, color:C.muted, margin:'2px 0 0' }}>{r.guest_phone}</p>}
+                  </div>
+                  <div style={{ fontSize:12, color:C.muted }}>
+                    {(r.events as any)?.title || '—'}
+                  </div>
+                  <div style={{ fontSize:11, color:C.muted }}>
+                    {r.created_at ? new Date(r.created_at).toLocaleDateString('ar-SA') : '—'}
+                  </div>
+                  <span style={{ display:'inline-block', padding:'3px 10px', borderRadius:4,
+                    fontSize:11, fontWeight:600, background:s.bg, color:s.color }}>
+                    {s.label}
+                  </span>
+                </div>
+              )
+            })}
+          </>
+        )}
+      </div>
     </div>
   )
 }
