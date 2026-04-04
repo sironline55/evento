@@ -1,5 +1,6 @@
 import { BaseService } from './BaseService';
 import { Attendee } from '../types';
+import { PlanService } from './PlanService';
 
 export class AttendeeService extends BaseService {
   async getAll(): Promise<Attendee[]> {
@@ -45,7 +46,24 @@ export class AttendeeService extends BaseService {
     return data || [];
   }
 
-  async register(eventId: string, userId: string): Promise<Attendee> {
+  /**
+   * [AR] تسجيل مسجل جديد في حدث مع فحص الحدود
+   * [EN] Register a new attendee with subscription limit checking
+   */
+  async register(eventId: string, userId: string, accountId?: string): Promise<{ success: boolean; data?: Attendee; error?: string }> {
+    // If accountId provided, check subscription limits
+    if (accountId) {
+      const planService = new PlanService();
+      const limit = await planService.checkAttendeeLimit(accountId, eventId);
+      
+      if (!limit.allowed) {
+        return {
+          success: false,
+          error: `وصلت إلى الحد الأقصى للمسجلين في خطتك (${limit.current}/${limit.max}). يرجى الترقية.`,
+        };
+      }
+    }
+
     const { data, error } = await this.supabase
       .from('attendees')
       .insert({
@@ -57,8 +75,15 @@ export class AttendeeService extends BaseService {
       .select()
       .single();
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    if (accountId) {
+      await this.logActivity(accountId, 'attendee.register', { eventId, attendeeId: data.id });
+    }
+
+    return { success: true, data };
   }
 
   async updateStatus(id: string, status: Attendee['status'], attendedAt?: string): Promise<Attendee> {
