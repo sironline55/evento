@@ -46,25 +46,25 @@ export default function WorkerRegisterPage() {
   }
 
   if (done) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8faf9' }} dir="rtl">
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAFAFA' }} dir="rtl">
       <div style={{ background: '#fff', borderRadius: 16, padding: 40, textAlign: 'center', maxWidth: 400 }}>
         <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
         <h2 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>تم التسجيل بنجاح!</h2>
-        <p style={{ color: '#666', marginBottom: 24 }}>سنتواصل معك قريباً عند توفر فرصة مناسبة في مدينتك</p>
+        <p style={{ color: '#6F7287', marginBottom: 24 }}>سنتواصل معك قريباً عند توفر فرصة مناسبة في مدينتك</p>
         <p style={{ fontSize: 13, color: '#999' }}>يمكنك مشاركة رابط التسجيل مع أصدقائك</p>
       </div>
     </div>
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #FBF8F5 0%, #F3F0F8 100%)' }} dir="rtl">
+    <div style={{ minHeight: '100vh', background: '#FAFAFA' }} dir="rtl">
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '32px 16px' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ width: 56, height: 56, background: '#F05537', borderRadius: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
             <span style={{ fontSize: 28 }}>👤</span>
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>سجّل للعمل في الفعاليات</h1>
-          <p style={{ color: '#666', fontSize: 14 }}>انضم لأكثر من آلاف المسجلين وابدأ العمل في الفعاليات السعودية</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1E0A3C', marginBottom: 4 }}>سجّل للعمل في الفعاليات</h1>
+          <p style={{ color: '#6F7287', fontSize: 14 }}>انضم لأكثر من آلاف المسجلين وابدأ العمل في الفعاليات السعودية</p>
         </div>
 
         <div style={{ background: '#fff', borderRadius: 20, padding: 28, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
@@ -108,7 +108,7 @@ export default function WorkerRegisterPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <h3 style={{ fontWeight: 600, marginBottom: 4 }}>المهارات والخبرة</h3>
               <div>
-                <p style={{ fontSize: 13, color: '#666', marginBottom: 10 }}>اختر مهاراتك (يمكن اختيار أكثر من واحدة)</p>
+                <p style={{ fontSize: 13, color: '#6F7287', marginBottom: 10 }}>اختر مهاراتك (يمكن اختيار أكثر من واحدة)</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {SKILLS.map(s => (
                     <button key={s} onClick={() => setForm({...form, skills: toggle(form.skills, s)})}
@@ -119,7 +119,7 @@ export default function WorkerRegisterPage() {
                 </div>
               </div>
               <div>
-                <p style={{ fontSize: 13, color: '#666', marginBottom: 10 }}>أنواع الفعاليات المفضلة</p>
+                <p style={{ fontSize: 13, color: '#6F7287', marginBottom: 10 }}>أنواع الفعاليات المفضلة</p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {EVENT_TYPES.map(e => (
                     <button key={e} onClick={() => setForm({...form, event_types: toggle(form.event_types, e)})}
@@ -130,7 +130,7 @@ export default function WorkerRegisterPage() {
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 13, color: '#666' }}>سنوات الخبرة في الفعاليات</label>
+                <label style={{ fontSize: 13, color: '#6F7287' }}>سنوات الخبرة في الفعاليات</label>
                 <select value={form.experience_years} onChange={e => setForm({...form, experience_years: e.target.value})} style={{...inp, marginTop: 8}}>
                   <option value="0">لا خبرة سابقة</option>
                   <option value="1">سنة</option>
@@ -150,7 +150,7 @@ export default function WorkerRegisterPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <h3 style={{ fontWeight: 600, marginBottom: 4 }}>الإتاحة والأجر</h3>
               <div>
-                <p style={{ fontSize: 13, color: '#666', marginBottom: 10 }}>أيام الإتاحة للعمل</p>
+                <p style={{ fontSize: 13, color: '#6F7287', marginBottom: 10 }}>أيام الإتاحة للعمل</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {DAYS.map(d => (
                     <button key={d.key} onClick={() => setForm({...form, availability: toggle(form.availability, d.key)})}
@@ -161,7 +161,7 @@ export default function WorkerRegisterPage() {
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 13, color: '#666' }}>الأجر المقبول لليوم (ريال سعودي)</label>
+                <label style={{ fontSize: 13, color: '#6F7287' }}>الأجر المقبول لليوم (ريال سعودي)</label>
                 <input value={form.daily_rate} onChange={e => setForm({...form, daily_rate: e.target.value})}
                   style={{...inp, marginTop: 8}} type="number" min="50" max="2000" />
                 <p style={{ fontSize: 12, color: '#999', marginTop: 4 }}>متوسط السوق: 150-300 ريال/يوم</p>
@@ -189,8 +189,8 @@ export default function WorkerRegisterPage() {
   )
 }
 
-const inp: React.CSSProperties = { padding: '12px 16px', border: '1px solid #e5e7eb', borderRadius: 10, fontSize: 15, width: '100%', outline: 'none', background: '#fafafa', boxSizing: 'border-box', fontFamily: 'inherit' }
+const inp: React.CSSProperties = { padding: '12px 16px', border: '1px solid #DBDAE3', borderRadius: 10, fontSize: 15, width: '100%', outline: 'none', background: '#FFFFFF', color: '#39364F', boxSizing: 'border-box', fontFamily: 'inherit' }
 const nextBtn: React.CSSProperties = { background: '#F05537', color: '#fff', padding: '14px 24px', borderRadius: 12, border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '100%' }
-const backBtn: React.CSSProperties = { background: '#f3f4f6', color: '#374151', padding: '14px 20px', borderRadius: 12, border: 'none', fontSize: 14, cursor: 'pointer' }
+const backBtn: React.CSSProperties = { background: '#f3f4f6', color: '#39364F', padding: '14px 20px', borderRadius: 12, border: 'none', fontSize: 14, cursor: 'pointer' }
 const gBtn: React.CSSProperties = { padding: '12px', borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 15, cursor: 'pointer', fontWeight: 500 }
 const tag: React.CSSProperties = { padding: '8px 14px', borderRadius: 20, border: 'none', fontSize: 13, cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }
