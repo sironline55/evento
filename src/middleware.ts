@@ -1,68 +1,92 @@
 import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+  const { pathname } = request.nextUrl
 
-  const sb = createServerClient(
+  // Public routes — no auth check
+  const PUBLIC = ['/e/','/ticket/','/r/','/staff/login','/login','/register','/workers/register','/_next/','/api/','/favicon']
+  if (PUBLIC.some(p => pathname.startsWith(p)) || pathname === '/') {
+    return NextResponse.next()
+  }
+
+  let response = NextResponse.next({ request })
+
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return request.cookies.getAll() },
-        setAll(c) {
-          c.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          c.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
         },
       },
     }
   )
 
-  const { data: { user } } = await sb.auth.getUser()
-  const path = request.nextUrl.pathname
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // Public paths — no auth needed
-  const PUBLIC = ['/login', '/register', '/r/', '/e/', '/ticket/', '/staff/login', '/workers/register']
-  if (PUBLIC.some(p => path.startsWith(p))) return supabaseResponse
-
-  // Not logged in → login
+  // Not logged in
   if (!user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+    // Staff routes → staff login
+    if (pathname.startsWith('/staff')) {
+      return NextResponse.redirect(new URL('/staff/login', request.url))
+    }
+    // Super admin → super admin login  
+    if (pathname.startsWith('/super-admin')) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    // Dashboard → login
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Get profile + org membership
-  const [{ data: profile }, { data: membership }] = await Promise.all([
-    sb.from('profiles').select('role, portal_type').eq('id', user.id).single(),
-    sb.from('org_members').select('role, org_id').eq('user_id', user.id).eq('status', 'active').single()
-  ])
+  // Get profile role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, portal_role')
+    .eq('id', user.id)
+    .single()
 
-  const isSuperAdmin = profile?.role === 'super_admin'
-  const isOrgOwner   = !membership || profile?.portal_type === 'organizer'
-  const isStaff      = membership && !isSuperAdmin
+  const role = profile?.role || 'admin'
 
-  // Route enforcement
-  if (path.startsWith('/super-admin') && !isSuperAdmin) {
+  // Super admin guard
+  if (pathname.startsWith('/super-admin') && role !== 'super_admin') {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  if (path.startsWith('/staff') && !isStaff) {
-    if (isSuperAdmin) return NextResponse.redirect(new URL('/super-admin', request.url))
-    return NextResponse.redirect(new URL('/', request.url))
+  // Staff portal guard — check if user has a worker_profile
+  if (pathname.startsWith('/staff')) {
+    const { data: worker } = await supabase
+      .from('worker_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+    if (!worker && role !== 'super_admin') {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+    return response
   }
 
-  // After login redirect based on role
-  if (path === '/login' && user) {
-    if (isSuperAdmin) return NextResponse.redirect(new URL('/super-admin', request.url))
-    if (isStaff)      return NextResponse.redirect(new URL('/staff', request.url))
-    return NextResponse.redirect(new URL('/', request.url))
+  // If worker tries to access organizer dashboard, redirect to staff portal
+  if (!pathname.startsWith('/super-admin') && !pathname.startsWith('/staff')) {
+    const { data: worker } = await supabase
+      .from('worker_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+    if (worker && role !== 'super_admin' && role !== 'admin' && role !== 'organizer') {
+      return NextResponse.redirect(new URL('/staff', request.url))
+    }
   }
 
-  return supabaseResponse
+  return response
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 }
