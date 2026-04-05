@@ -231,7 +231,7 @@ export default function SuperAdminPage() {
                         </select>
                       </div>
                     </div>
-                    <div style={{ display:'flex', gap:8' }}>
+                    <div style={{ display:'flex', gap:8 }}>
                       <button onClick={()=>toggleOrgStatus(o.id,o.status)} style={{ padding:'5px 12px', border:`1px solid ${C.border}`, borderRadius:6, background:o.status==='active'?'#FEF2F2':o.status==='suspended'?'#EAF7E0':'#EAF7E0', color:o.status==='active'?'#DC2626':C.green, fontWeight:700, fontSize:11, cursor:'pointer', fontFamily:'inherit' }}>
                         {o.status==='active'?'تعليق':o.status==='suspended'?'تفعيل':'تفعيل'}
                       </button>

@@ -1,20 +1,12 @@
-import { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
   appId: 'com.eventovms.app',
-  appName: 'EventoVMS',
+  appName: 'EventVMS',
   webDir: 'out',
   server: {
-    url: 'https://evento-git-main-sironline55s-projects.vercel.app',
-    cleartext: false,
-  },
-  plugins: {
-    SplashScreen: {
-      launchShowDuration: 2000,
-      backgroundColor: '#2B6E64',
-      showSpinner: false,
-    },
-  },
-};
+    androidScheme: 'https'
+  }
+}
 
-export default config;
+export default config
