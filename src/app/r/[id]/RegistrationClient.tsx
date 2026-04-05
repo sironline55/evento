@@ -47,6 +47,14 @@ export default function RegistrationClient() {
       })
       setRegId(reg.id); setGuestName(form.full_name); setGuestPhone(form.phone)
       setGuestEmail(form.email); setQrDataUrl(qrUrl); setDone(true)
+      // Send confirmation email
+      if (form.email) {
+        fetch(process.env.NEXT_PUBLIC_SUPABASE_URL + '/functions/v1/send-registration-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '' },
+          body: JSON.stringify({ registration_id: reg.id })
+        }).catch(()=>{})
+      }
     } catch (err: any) { alert('خطأ: ' + err.message); setSub(false) }
   }
 
