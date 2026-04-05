@@ -1,14 +1,13 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // trailingSlash only for mobile static export
+  images: {
+    unoptimized: true,
+  },
   ...(process.env.BUILD_TARGET === 'mobile' && {
     output: 'export',
     trailingSlash: true,
   }),
-  images: {
-    unoptimized: true,
-  },
-};
+}
 
-export default nextConfig;
+export default nextConfig

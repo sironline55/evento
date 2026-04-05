@@ -2,104 +2,139 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import NotificationBell from '@/components/NotificationBell'
+import { useState } from 'react'
+
+const C = {
+  primary: '#F05537',
+  navy: '#1C1C3B',
+  bg: '#FAFAFA',
+  card: '#FFFFFF',
+  border: '#F0EDE8',
+  muted: '#8B8FA8',
+}
 
 const NAV = [
-  { href:'/',          key:'home',    label:'الرئيسية'  },
-  { href:'/events',    key:'cal',     label:'الفعاليات' },
-  { href:'/attendees', key:'orders',  label:'الزوار'    },
-  { href:'/scanner',   key:'scan',    label:'الماسح'    },
-  { href:'/staffing',  key:'promote', label:'الكوادر'   },
-  { href:'/analytics', key:'chart',   label:'التقارير'  },
-  { href:'/billing',   key:'finance', label:'المالية'   },
-  { href:'/settings',  key:'gear',    label:'الإعدادات' },
+  { href: '/dashboard',         key: 'home',     label: 'الرئيسية' },
+  { href: '/events',            key: 'cal',      label: 'الفعاليات' },
+  { href: '/attendees',         key: 'users',    label: 'الزوار' },
+  { href: '/scanner',           key: 'scan',     label: 'الماسح' },
+  { href: '/staffing',          key: 'team',     label: 'الكوادر' },
+  { href: '/workers/register',  key: 'work',     label: 'العمال' },
+  { href: '/settings',          key: 'gear',     label: 'الإعدادات' },
 ]
 
 const ICONS: Record<string, React.ReactElement> = {
-  home:    <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>,
-  cal:     <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z"/></svg>,
-  orders:  <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>,
-  scan:    <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 6.5v3h-3v-3h3M11 5H5v6h6V5zm-1.5 9.5v3h-3v-3h3M11 13H5v6h6v-6zm6.5-6.5v3h-3v-3h3M20 5h-6v6h6V5zm-6 8h1.5v1.5H14V13zm1.5 1.5H17V16h-1.5v-1.5zM17 13h1.5v1.5H17V13zm-3 3h1.5v1.5H14V16zm1.5 1.5H17V19h-1.5v-1.5zM17 16h1.5v1.5H17V16zm1.5-1.5H20V16h-1.5v-1.5zm0 3H20V19h-1.5v-1.5zM22 7h-2V4h-3V2h5v5zm0 15v-5h-2v3h-3v2h5zM2 22h5v-2H4v-3H2v5zM2 2v5h2V4h3V2H2z"/></svg>,
-  promote: <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>,
-  chart:   <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>,
-  finance: <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>,
-  gear:    <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>,
-  help:    <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>,
+  home:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  cal:   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  users: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  scan:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+  team:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>,
+  work:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+  gear:  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
 }
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const active = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
+  const [open, setOpen] = useState(false)
+
+  const active = (href: string) =>
+    pathname === href || (href !== '/' && pathname.startsWith(href))
 
   return (
     <>
-      {/* ── Desktop sidebar ── */}
-      <aside className="hidden md:flex" style={{
-        position: 'fixed', right: 0, top: 0, height: '100%', width: 56,
-        background: '#FFFFFF', borderLeft: '1px solid #DBDAE3',
-        flexDirection: 'column', alignItems: 'center', zIndex: 40, paddingTop: 12, gap: 2
-      }}>
-        <Link href="/" style={{
-          width: 36, height: 36, background: '#F05537', borderRadius: 6,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: 10, flexShrink: 0, color: '#fff', fontWeight: 800,
-          fontSize: 13, textDecoration: 'none'
-        }}>E</Link>
+      {/* Mobile overlay */}
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 40,
+          }}
+        />
+      )}
 
+      {/* Mobile top bar */}
+      <div
+        className="md:hidden"
+        style={{
+          position: 'fixed', top: 0, left: 0, right: 0, height: 56,
+          background: C.card, borderBottom: `1px solid ${C.border}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 16px', zIndex: 50,
+        }}
+      >
+        <button
+          onClick={() => setOpen(!open)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.navy }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            {open
+              ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
+              : <><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></>
+            }
+          </svg>
+        </button>
+        <span style={{ fontWeight: 700, color: C.primary, fontSize: 18 }}>EventVMS</span>
+        <div style={{ width: 24 }} />
+      </div>
+
+      {/* Sidebar */}
+      <aside
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          height: '100vh',
+          width: 56,
+          background: C.card,
+          borderLeft: `1px solid ${C.border}`,
+          zIndex: 45,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          paddingTop: 12,
+          paddingBottom: 12,
+          overflowY: 'auto',
+          transition: 'transform 0.25s ease',
+        }}
+        className={open ? '' : 'hidden md:flex'}
+      >
+        {/* Logo */}
+        <div style={{
+          width: 36, height: 36,
+          background: C.primary,
+          borderRadius: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', fontWeight: 800, fontSize: 13,
+          marginBottom: 16, flexShrink: 0,
+        }}>E</div>
+
+        {/* Nav items */}
         {NAV.map(({ href, key, label }) => {
           const on = active(href)
           return (
-            <Link key={key} href={href} title={label} style={{
-              width: 40, height: 40, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', borderRadius: 6, flexShrink: 0,
-              color: on ? '#F05537' : '#6F7287',
-              background: on ? '#FEF0ED' : 'transparent',
-              textDecoration: 'none', transition: 'all 0.15s'
-            }}>
+            <Link
+              key={key}
+              href={href}
+              title={label}
+              style={{
+                width: 40, height: 40,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 10, flexShrink: 0,
+                color: on ? C.primary : C.muted,
+                background: on ? '#FEF0ED' : 'transparent',
+                textDecoration: 'none',
+                transition: 'all 0.15s',
+                marginBottom: 4,
+              }}
+              onClick={() => setOpen(false)}
+            >
               {ICONS[key]}
             </Link>
           )
         })}
-
-        <div style={{ marginTop: 'auto', paddingBottom: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-          {/* Notification Bell */}
-          <NotificationBell />
-          <Link href="#" title="مساعدة" style={{
-            width: 40, height: 40, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', color: '#6F7287', borderRadius: 6, textDecoration: 'none'
-          }}>
-            {ICONS.help}
-          </Link>
-        </div>
       </aside>
-
-      {/* ── Mobile bottom nav ── */}
-      <nav className="flex md:hidden" style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-        background: '#FFFFFF', borderTop: '1px solid #DBDAE3',
-        paddingBottom: 'env(safe-area-inset-bottom, 6px)',
-        justifyContent: 'space-around'
-      }}>
-        {NAV.slice(0, 4).map(({ href, key, label }) => {
-          const on = active(href)
-          return (
-            <Link key={key} href={href} style={{
-              flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              padding: '8px 2px 5px', textDecoration: 'none', gap: 2,
-              color: on ? '#F05537' : '#6F7287', minWidth: 0
-            }}>
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{ICONS[key]}</span>
-              <span style={{ fontSize: 9, fontWeight: on ? 700 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 52, color: on ? '#F05537' : '#6F7287' }}>{label}</span>
-            </Link>
-          )
-        })}
-        {/* Notification bell on mobile */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 2px 5px' }}>
-          <NotificationBell />
-          <span style={{ fontSize: 9, color: '#6F7287', marginTop: 2 }}>إشعارات</span>
-        </div>
-      </nav>
     </>
   )
 }
