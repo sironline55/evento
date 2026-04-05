@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useEffect, useState } from 'react'
+import { useEffect, useState , Suspense} from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -24,7 +24,7 @@ const STATUS_MAP: Record<string,{label:string;color:string;bg:string}> = {
 
 type Tab = 'upcoming'|'past'|'draft'|'all'
 
-export default function EventsPage() {
+function EventsPageInner() {
   const sp = useSearchParams()
   const [tab, setTab] = useState<Tab>('upcoming')
   const [events, setEvents] = useState<any[]>([])
@@ -206,5 +206,13 @@ export default function EventsPage() {
       </div>
       <div className="h-20 md:h-0"/>
     </div>
+  )
+}
+
+export default function EventsPage() {
+  return (
+    <Suspense fallback={<div style={{padding:40,textAlign:'center',color:'#666'}}>جاري التحميل...</div>}>
+      <EventsPageInner />
+    </Suspense>
   )
 }
