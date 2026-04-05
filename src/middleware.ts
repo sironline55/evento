@@ -5,9 +5,19 @@ import type { NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Public routes — no auth check
-  const PUBLIC = ['/e/','/ticket/','/r/','/staff/login','/login','/register','/workers/register','/_next/','/api/','/favicon']
-  if (PUBLIC.some(p => pathname.startsWith(p)) || pathname === '/') {
+  // Always allow these routes
+  if (
+    pathname.startsWith('/e/') ||
+    pathname.startsWith('/ticket/') ||
+    pathname.startsWith('/r/') ||
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/workers/') ||
+    pathname === '/staff/login' ||
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname.includes('.')
+  ) {
     return NextResponse.next()
   }
 
@@ -31,57 +41,25 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Not logged in
-  if (!user) {
-    // Staff routes → staff login
-    if (pathname.startsWith('/staff')) {
-      return NextResponse.redirect(new URL('/staff/login', request.url))
-    }
-    // Super admin → super admin login  
-    if (pathname.startsWith('/super-admin')) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-    // Dashboard → login
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // Get profile role
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, portal_role')
-    .eq('id', user.id)
-    .single()
-
-  const role = profile?.role || 'admin'
-
-  // Super admin guard
-  if (pathname.startsWith('/super-admin') && role !== 'super_admin') {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  // Staff portal guard — check if user has a worker_profile
+  // Staff routes — require login
   if (pathname.startsWith('/staff')) {
-    const { data: worker } = await supabase
-      .from('worker_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-    if (!worker && role !== 'super_admin') {
-      return NextResponse.redirect(new URL('/', request.url))
+    if (!user) {
+      return NextResponse.redirect(new URL('/staff/login', request.url))
     }
     return response
   }
 
-  // If worker tries to access organizer dashboard, redirect to staff portal
-  if (!pathname.startsWith('/super-admin') && !pathname.startsWith('/staff')) {
-    const { data: worker } = await supabase
-      .from('worker_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-    if (worker && role !== 'super_admin' && role !== 'admin' && role !== 'organizer') {
-      return NextResponse.redirect(new URL('/staff', request.url))
+  // Super admin — require login
+  if (pathname.startsWith('/super-admin')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url))
     }
+    return response
+  }
+
+  // Dashboard routes — require login
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return response
