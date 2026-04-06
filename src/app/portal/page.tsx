@@ -1,3 +1,5 @@
+'use client'
+export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 
 const C = { navy:'#1E0A3C', orange:'#F05537', card:'#FFFFFF', border:'#DBDAE3', muted:'#6F7287' }
