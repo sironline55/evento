@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C', orange:'#F05537', text:'#39364F', muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#3A7D0A' }
 const fs = { width:'100%', padding:'10px 14px', border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, outline:'none', fontFamily:'inherit', color:C.text, background:C.bg, boxSizing:'border-box' as const }
 
 export default function StaffProfile() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const router = useRouter()
   const [worker, setWorker] = useState<any>(null)
   const [ratings, setRatings] = useState<any[]>([])
@@ -35,6 +35,7 @@ export default function StaffProfile() {
   }, [])
 
   async function save() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setSaving(true)
     await sb.from('worker_profiles').update({ ...form, updated_at: new Date().toISOString() }).eq('id', worker.id)
     setWorker((w: any) => ({ ...w, ...form }))

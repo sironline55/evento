@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -19,6 +18,7 @@ const TABS = [
 ]
 
 export default function SettingsPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [tab, setTab]       = useState('profile')
   const [user, setUser]     = useState<any>(null)
   const [name, setName]     = useState('')
@@ -36,6 +36,7 @@ export default function SettingsPage() {
   }, [])
 
   async function saveProfile() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setSaving(true)
     await sb.auth.updateUser({ data: { full_name: name } })
     setSaving(false); setSaved(true)
@@ -43,6 +44,7 @@ export default function SettingsPage() {
   }
 
   async function signOut() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     await sb.auth.signOut()
     router.push('/login')
   }

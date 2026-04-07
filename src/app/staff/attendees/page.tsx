@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C',orange:'#F05537',text:'#39364F',muted:'#6F7287',border:'#DBDAE3',bg:'#FAFAFA',card:'#FFFFFF',green:'#3A7D0A' }
 const fs = {width:'100%',padding:'9px 12px',border:`1px solid ${C.border}`,borderRadius:6,fontSize:13,outline:'none',fontFamily:'inherit',color:C.text,background:C.bg,boxSizing:'border-box' as const}
 
 export default function StaffAttendeesPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [regs,setRegs]=useState<any[]>([])
   const [events,setEvents]=useState<any[]>([])
   const [selEv,setSelEv]=useState('')
@@ -34,12 +34,14 @@ export default function StaffAttendeesPage() {
   },[])
 
   async function loadEvent(eid:string){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setSelEv(eid);setLoading(true)
     const {data:r}=await sb.from('registrations').select('*').eq('event_id',eid).order('created_at',{ascending:false})
     setRegs(r||[]);setLoading(false)
   }
 
   async function checkIn(id:string){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     await sb.from('registrations').update({status:'attended',checked_in_at:new Date().toISOString()}).eq('id',id)
     setRegs(r=>r.map(x=>x.id===id?{...x,status:'attended',checked_in_at:new Date().toISOString()}:x))
   }

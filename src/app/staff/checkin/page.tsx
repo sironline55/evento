@@ -3,10 +3,10 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C', orange:'#F05537', text:'#39364F', muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#3A7D0A' }
 
 export default function StaffCheckin() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [events, setEvents]   = useState<any[]>([])
   const [selEv, setSelEv]     = useState<string>('')
   const [regs, setRegs]       = useState<any[]>([])
@@ -26,6 +26,7 @@ export default function StaffCheckin() {
   }, [])
 
   async function loadRegs(evId: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setLoading(true)
     const { data } = await sb.from('registrations').select('id,guest_name,guest_email,ticket_type,status,checked_in_at').eq('event_id',evId).neq('status','waitlisted').order('guest_name')
     setRegs(data||[])
@@ -33,6 +34,7 @@ export default function StaffCheckin() {
   }
 
   async function checkIn(regId: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     await sb.from('registrations').update({ status:'attended', checked_in_at: new Date().toISOString(), check_in_method:'staff_manual' }).eq('id', regId)
     setRegs(r => r.map(x => x.id===regId ? {...x, status:'attended', checked_in_at: new Date().toISOString()} : x))
   }

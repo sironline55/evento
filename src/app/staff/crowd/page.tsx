@@ -3,10 +3,10 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C', orange:'#F05537', text:'#39364F', muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#3A7D0A' }
 
 export default function StaffCrowd() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [events, setEvents] = useState<any[]>([])
   const [selEv, setSelEv]   = useState<any>(null)
   const [regs, setRegs]     = useState({ total:0, attended:0, capacity:0 })
@@ -26,6 +26,7 @@ export default function StaffCrowd() {
   }, [])
 
   async function loadEvent(ev: any) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setSelEv(ev)
     const [{ count:total },{ count:attended }] = await Promise.all([
       sb.from('registrations').select('*',{count:'exact',head:true}).eq('event_id',ev.id).neq('status','waitlisted'),

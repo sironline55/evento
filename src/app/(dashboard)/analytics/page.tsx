@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -12,6 +11,7 @@ const C = {
 }
 
 export default function AnalyticsPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [stats, setStats] = useState({
     totalEvents:0, totalRegs:0, attended:0, pending:0, cancelled:0
   })

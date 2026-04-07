@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C',orange:'#F05537',text:'#39364F',muted:'#6F7287',border:'#DBDAE3',bg:'#FAFAFA',card:'#FFFFFF',green:'#3A7D0A' }
 
 export default function MyTicketsPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [email, setEmail]   = useState('')
   const [phone, setPhone]   = useState('')
   const [tickets, setTickets] = useState<any[]|null>(null)
@@ -15,6 +15,7 @@ export default function MyTicketsPage() {
   const [searched, setSearched] = useState(false)
 
   async function search(e: React.FormEvent) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     e.preventDefault(); setLoading(true)
     let q = sb.from('registrations').select('*, events(title,start_date,end_date,location,cover_image,location_type)')
     if (email.trim()) q = q.eq('guest_email', email.trim().toLowerCase())

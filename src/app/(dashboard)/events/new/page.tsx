@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -51,6 +50,7 @@ function EventPreview({ title, subtitle, category, subcategory, startDate, start
   ageInfo:string; doorTime:string; parking:string; tickets:Ticket[]
   coverPreview:string|null; mode:'mobile'|'desktop'
 }) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const isMobile = mode === 'mobile'
   const locStr = locationType==='online' ? 'عبر الإنترنت' : locationType==='tba' ? 'يُعلَن لاحقاً' : location||'مكان الفعالية'
   const dateStr = startDate ? new Date(`${startDate}T${startTime}`).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) : null
@@ -147,6 +147,7 @@ function EventPreview({ title, subtitle, category, subcategory, startDate, start
 }
 
 export default function NewEventPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -191,6 +192,7 @@ export default function NewEventPage() {
   const [status, setStatus]         = useState<'draft'|'published'>('draft')
 
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
     reader.onload = ev => setCoverPreview(ev.target?.result as string)
@@ -208,23 +210,36 @@ export default function NewEventPage() {
     } finally { setImageUploading(false) }
   }
 
-  function addTicket() { setTickets(t=>[...t,{id:Date.now(),name:'',type:'free',price:'',qty:'',desc:'',saleStart:'',saleEnd:''}]) }
-  function removeTicket(id:number) { setTickets(t=>t.filter(tk=>tk.id!==id)) }
-  function updateTicket(id:number, f:keyof Ticket, v:string) { setTickets(t=>t.map(tk=>tk.id===id?{...tk,[f]:v}:tk)) }
+  function addTicket() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setTickets(t=>[...t,{id:Date.now(),name:'',type:'free',price:'',qty:'',desc:'',saleStart:'',saleEnd:''}]) }
+  function removeTicket(id:number) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setTickets(t=>t.filter(tk=>tk.id!==id)) }
+  function updateTicket(id:number, f:keyof Ticket, v:string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setTickets(t=>t.map(tk=>tk.id===id?{...tk,[f]:v}:tk)) }
 
-  function addFaq() { setFaqs(f=>[...f,{q:'',a:''}]) }
-  function removeFaq(i:number) { setFaqs(f=>f.filter((_,idx)=>idx!==i)) }
-  function updateFaq(i:number, f:'q'|'a', v:string) { setFaqs(fs=>fs.map((faq,idx)=>idx===i?{...faq,[f]:v}:faq)) }
+  function addFaq() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setFaqs(f=>[...f,{q:'',a:''}]) }
+  function removeFaq(i:number) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setFaqs(f=>f.filter((_,idx)=>idx!==i)) }
+  function updateFaq(i:number, f:'q'|'a', v:string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setFaqs(fs=>fs.map((faq,idx)=>idx===i?{...faq,[f]:v}:faq)) }
 
-  function addAgenda() { setAgenda(a=>[...a,{time:'',title:'',speaker:''}]) }
-  function removeAgenda(i:number) { setAgenda(a=>a.filter((_,idx)=>idx!==i)) }
-  function updateAgenda(i:number, f:keyof AgendaItem, v:string) { setAgenda(a=>a.map((it,idx)=>idx===i?{...it,[f]:v}:it)) }
+  function addAgenda() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setAgenda(a=>[...a,{time:'',title:'',speaker:''}]) }
+  function removeAgenda(i:number) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setAgenda(a=>a.filter((_,idx)=>idx!==i)) }
+  function updateAgenda(i:number, f:keyof AgendaItem, v:string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setAgenda(a=>a.map((it,idx)=>idx===i?{...it,[f]:v}:it)) }
 
-  function addLineup() { setLineup(l=>[...l,{name:'',role:'',bio:''}]) }
-  function removeLineup(i:number) { setLineup(l=>l.filter((_,idx)=>idx!==i)) }
-  function updateLineup(i:number, f:keyof LineupMember, v:string) { setLineup(l=>l.map((it,idx)=>idx===i?{...it,[f]:v}:it)) }
+  function addLineup() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setLineup(l=>[...l,{name:'',role:'',bio:''}]) }
+  function removeLineup(i:number) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setLineup(l=>l.filter((_,idx)=>idx!==i)) }
+  function updateLineup(i:number, f:keyof LineupMember, v:string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setLineup(l=>l.map((it,idx)=>idx===i?{...it,[f]:v}:it)) }
 
   async function publish() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if (!title.trim()) { alert('يرجى إدخال اسم الفعالية'); setStep(1); return }
     if (!startDate) { alert('يرجى تحديد تاريخ البداية'); setStep(1); return }
     setSaving(true)

@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -22,6 +21,7 @@ const STYLES: Record<string,{bg:string;border:string;color:string;icon:string}> 
 }
 
 function ScannerInner() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const sp = useSearchParams()
   const preselectedEvent = sp.get('event')
 
@@ -127,6 +127,7 @@ function ScannerInner() {
   },[handleCodeFound])
 
   async function startCamera() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setCameraErr('')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } })
@@ -141,6 +142,7 @@ function ScannerInner() {
   }
 
   function stopCamera() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     scanActive.current = false
     streamRef.current?.getTracks().forEach(t=>t.stop())
     streamRef.current = null
@@ -355,5 +357,6 @@ function ScannerInner() {
 }
 
 export default function ScannerPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   return <Suspense><ScannerInner/></Suspense>
 }

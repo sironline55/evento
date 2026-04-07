@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -19,6 +18,7 @@ const STATUS_CONFIG: Record<string,{label:string;bg:string;color:string}> = {
 }
 
 export default function AttendeesPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [regs, setRegs]       = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch]   = useState('')

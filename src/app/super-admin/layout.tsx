@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = {
   navy: '#1C1C3B', primary: '#F47D31',
@@ -19,6 +18,7 @@ const nav = [
 ]
 
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [loading, setLoading]       = useState(true)
   const [authorized, setAuthorized] = useState(false)
   const router   = useRouter()
@@ -27,6 +27,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   useEffect(() => { checkAuth() }, [])
 
   async function checkAuth() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     const { data: { user } } = await sb.auth.getUser()
     if (!user) { router.push('/login'); return }
     const { data: profile } = await sb

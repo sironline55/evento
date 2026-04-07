@@ -5,10 +5,10 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C', orange:'#F05537', text:'#39364F', muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF' }
 
 export default function StaffLogin() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const router = useRouter()
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -16,6 +16,7 @@ export default function StaffLogin() {
   const [error, setError]       = useState('')
 
   async function handleLogin(e: React.FormEvent) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     e.preventDefault()
     setLoading(true); setError('')
     const { error: err } = await sb.auth.signInWithPassword({ email, password })

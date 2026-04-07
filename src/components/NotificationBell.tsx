@@ -3,10 +3,10 @@ import { useEffect, useState, useRef } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C', orange:'#F05537', border:'#DBDAE3', muted:'#6F7287', card:'#FFFFFF', bg:'#FAFAFA' }
 
 export default function NotificationBell() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [open, setOpen]     = useState(false)
   const [notifs, setNotifs] = useState<any[]>([])
   const [userId, setUserId] = useState<string|null>(null)
@@ -43,6 +43,7 @@ export default function NotificationBell() {
   // Close on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
@@ -50,12 +51,14 @@ export default function NotificationBell() {
   }, [])
 
   async function markAllRead() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if (!userId) return
     await sb.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false)
     setNotifs(n => n.map(x => ({ ...x, is_read: true })))
   }
 
   async function markRead(id: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     await sb.from('notifications').update({ is_read: true }).eq('id', id)
     setNotifs(n => n.map(x => x.id === id ? { ...x, is_read: true } : x))
   }

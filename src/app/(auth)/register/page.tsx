@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24">
@@ -16,6 +15,7 @@ const GoogleIcon = () => (
 )
 
 export default function RegisterPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [form, setForm] = useState({ name:'', email:'', password:'' })
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -23,12 +23,14 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false)
 
   async function register(e: React.FormEvent) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     e.preventDefault(); setLoading(true); setError('')
     const { error } = await sb.auth.signUp({ email: form.email, password: form.password, options: { data: { full_name: form.name } } })
     if (error) { setError(error.message); setLoading(false) } else setSuccess(true)
   }
 
   async function registerWithGoogle() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setGoogleLoading(true); setError('')
     const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/' } })
     if (error) { setError(error.message); setGoogleLoading(false) }

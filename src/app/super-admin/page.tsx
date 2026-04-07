@@ -6,12 +6,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C', orange:'#F05537', text:'#39364F', muted:'#6F7287', border:'#DBDAE3', bg:'#F4F3F8', card:'#FFFFFF', green:'#3A7D0A' }
 const fs = { width:'100%',padding:'10px 14px',border:`2px solid ${C.border}`,borderRadius:8,fontSize:13,outline:'none',fontFamily:'inherit',color:C.text,background:C.card,boxSizing:'border-box' as const }
 const TABS = ['لوحة التحكم','الشركات','الباقات','المحاسبة','النسخ الاحتياطي']
 
 export default function SuperAdminPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const router = useRouter()
   const [tab, setTab]   = useState(0)
   const [stats, setStats] = useState({ orgs:0, active:0, trial:0, revenue:0 })
@@ -35,6 +35,7 @@ export default function SuperAdminPage() {
   }, [])
 
   async function loadData() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     const [{ data: o }, { data: pl }] = await Promise.all([
       sb.from('organizations').select('*').order('created_at', { ascending:false }),
       sb.from('plans').select('*').order('sort_order'),
@@ -52,6 +53,7 @@ export default function SuperAdminPage() {
   }
 
   async function createOrg() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setSavingOrg(true)
     const { error } = await sb.from('organizations').insert({
       name: newOrg.name, email: newOrg.email, phone: newOrg.phone||null,
@@ -63,17 +65,20 @@ export default function SuperAdminPage() {
   }
 
   async function toggleOrgStatus(id:string, status:string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     const next = status==='active'?'suspended':status==='suspended'?'active':'active'
     await sb.from('organizations').update({ status:next }).eq('id',id)
     setOrgs(o => o.map(x=>x.id===id?{...x,status:next}:x))
   }
 
   async function changePlan(id:string, plan:string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     await sb.from('organizations').update({ plan }).eq('id',id)
     setOrgs(o => o.map(x=>x.id===id?{...x,plan}:x))
   }
 
   async function createPlan() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setSavingPlan(true)
     await sb.from('plans').insert({
       name: newPlan.name, name_ar: newPlan.name_ar,
@@ -90,6 +95,7 @@ export default function SuperAdminPage() {
   }
 
   async function downloadBackup(orgId:string, orgName:string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setBackupLoading(orgId)
     try {
       const [{ data:events },{ data:regs },{ data:members }] = await Promise.all([
@@ -106,6 +112,7 @@ export default function SuperAdminPage() {
   }
 
   async function downloadAllBackup() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setBackupLoading('all')
     try {
       const [{ data:o },{ data:e },{ data:r }] = await Promise.all([

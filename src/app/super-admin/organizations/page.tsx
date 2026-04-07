@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = {
   navy: '#1C1C3B', primary: '#F47D31',
@@ -33,6 +32,7 @@ const STATUS_FILTER_LABELS: Record<string, string> = {
 }
 
 export default function OrganizationsPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [orgs, setOrgs]                   = useState<any[]>([])
   const [loading, setLoading]             = useState(true)
   const [filter, setFilter]               = useState('all')
@@ -42,6 +42,7 @@ export default function OrganizationsPage() {
   useEffect(() => { loadOrgs() }, [])
 
   async function loadOrgs() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setLoading(true)
     const { data } = await sb.from('organizations')
       .select('id,name,email,plan,status,max_events,max_members,created_at,trial_ends_at')
@@ -51,6 +52,7 @@ export default function OrganizationsPage() {
   }
 
   async function toggleSuspend(org: any) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setActionLoading(org.id)
     const newStatus = org.status === 'suspended' ? 'active' : 'suspended'
     await sb.from('organizations').update({ status: newStatus }).eq('id', org.id)

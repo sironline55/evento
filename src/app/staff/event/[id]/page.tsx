@@ -4,10 +4,10 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useParams } from 'next/navigation'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C',orange:'#F05537',text:'#39364F',muted:'#6F7287',border:'#DBDAE3',bg:'#FAFAFA',card:'#FFFFFF',green:'#3A7D0A' }
 
 export default function StaffEventPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const { id } = useParams()
   const [worker, setWorker]       = useState<any>(null)
   const [assignment, setAssignment] = useState<any>(null)
@@ -64,6 +64,7 @@ export default function StaffEventPage() {
   }, [id])
 
   async function startCamera() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
       streamRef.current = stream
@@ -71,10 +72,12 @@ export default function StaffEventPage() {
       setCameraOn(true); scanRef.current = true; requestAnimationFrame(processFrame)
     } catch { alert('تعذّر تشغيل الكاميرا') }
   }
-  function stopCamera() { scanRef.current=false; streamRef.current?.getTracks().forEach(t=>t.stop()); if(videoRef.current)videoRef.current.srcObject=null; setCameraOn(false) }
+  function stopCamera() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) scanRef.current=false; streamRef.current?.getTracks().forEach(t=>t.stop()); if(videoRef.current)videoRef.current.srcObject=null; setCameraOn(false) }
   useEffect(()=>()=>{stopCamera()},[])
 
   async function handleScan(code: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if (!code.trim() || scanning) return
     setScanning(true); setScanRes(null)
     try {
@@ -92,11 +95,13 @@ export default function StaffEventPage() {
   }
 
   async function checkIn() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if (!assignment) return
     await sb.from('event_staff_assignments').update({status:'checked_in',checked_in_at:new Date().toISOString()}).eq('id',assignment.id)
     setAssignment((a:any)=>({...a,status:'checked_in',checked_in_at:new Date().toISOString()}))
   }
   async function checkOut() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if (!assignment) return
     await sb.from('event_staff_assignments').update({status:'completed',checked_out_at:new Date().toISOString()}).eq('id',assignment.id)
     setAssignment((a:any)=>({...a,status:'completed',checked_out_at:new Date().toISOString()}))

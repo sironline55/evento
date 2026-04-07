@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = { navy:'#1E0A3C', orange:'#F05537', text:'#1F1F2E', muted:'#4A4A68', border:'#C8C6D4', bg:'#F4F3F8', card:'#FFFFFF', green:'#1A6B00' }
 
@@ -23,6 +22,7 @@ const label: React.CSSProperties = { fontSize:13, fontWeight:700, color:C.navy, 
 const section: React.CSSProperties = { marginBottom:18 }
 
 export default function WorkerRegisterPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const router = useRouter()
   const [step, setStep]     = useState(1)
   const [loading, setLoading] = useState(false)
@@ -39,6 +39,7 @@ export default function WorkerRegisterPage() {
   const set = (k:string,v:any) => setForm(f=>({...f,[k]:v}))
 
   async function submit() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if(!form.email||!form.password) { alert('يرجى إدخال البريد الإلكتروني وكلمة المرور'); return }
     setLoading(true)
     try {

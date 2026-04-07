@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24">
@@ -17,6 +16,7 @@ const GoogleIcon = () => (
 )
 
 export default function LoginPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -26,6 +26,7 @@ export default function LoginPage() {
   const router = useRouter()
 
   async function login(e: React.FormEvent) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     e.preventDefault()
     setLoading(true); setError('')
     const { error } = await sb.auth.signInWithPassword({ email, password })
@@ -34,6 +35,7 @@ export default function LoginPage() {
   }
 
   async function loginWithGoogle() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setGoogleLoading(true); setError('')
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',

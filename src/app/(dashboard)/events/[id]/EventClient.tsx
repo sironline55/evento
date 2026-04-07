@@ -5,9 +5,9 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 export default function EventDetailPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const { id } = useParams()
   const [event, setEvent] = useState<any>(null)
   const [registrations, setRegistrations] = useState<any[]>([])
@@ -26,6 +26,7 @@ export default function EventDetailPage() {
   }, [id])
 
   async function copyRegLink() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     await navigator.clipboard.writeText(window.location.origin + '/r/' + id)
     alert('تم نسخ رابط التسجيل!')
   }

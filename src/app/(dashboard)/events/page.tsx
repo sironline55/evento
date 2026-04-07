@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -22,6 +21,7 @@ const STATUS_MAP: Record<string,{label:string;color:string;bg:string}> = {
 type Tab = 'upcoming'|'past'|'draft'|'all'
 
 function EventsPageInner() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const sp = useSearchParams()
   const [tab, setTab] = useState<Tab>('upcoming')
   const [events, setEvents] = useState<any[]>([])
@@ -34,6 +34,7 @@ function EventsPageInner() {
   }, [tab, search])
 
   async function loadEvents() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setLoading(true)
     const now = new Date().toISOString()
     let q = sb.from('events').select('id,title,start_date,end_date,status,location,cover_image,category,capacity,is_public')
@@ -207,6 +208,7 @@ function EventsPageInner() {
 }
 
 export default function EventsPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   return (
     <Suspense fallback={<div style={{padding:40,textAlign:'center',color:'#666'}}>جاري التحميل...</div>}>
       <EventsPageInner />

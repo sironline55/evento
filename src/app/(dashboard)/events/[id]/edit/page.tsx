@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -27,6 +26,7 @@ const fieldStyle = {
 const labelStyle = { fontSize:13, fontWeight:600, color:C.navy, marginBottom:6, display:'block' as const }
 
 export default function EditEventPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const { id } = useParams()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -68,6 +68,7 @@ export default function EditEventPage() {
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }))
 
   async function save(publish = false) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setSaving(true)
     const payload: any = {
       ...form,

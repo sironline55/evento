@@ -3,10 +3,10 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C', orange:'#F05537', text:'#39364F', muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#3A7D0A' }
 
 export default function StaffScanner() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const [worker, setWorker] = useState<any>(null)
   const [events, setEvents] = useState<any[]>([])
   const [selEvent, setSelEvent] = useState<string>('all')
@@ -56,6 +56,7 @@ export default function StaffScanner() {
   }, [selEvent])
 
   async function startCamera() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setCameraErr('')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } })
@@ -64,10 +65,12 @@ export default function StaffScanner() {
       setCameraOn(true); scanRef.current = true; requestAnimationFrame(processFrame)
     } catch(e:any) { setCameraErr(e.name === 'NotAllowedError' ? 'يرجى السماح بالكاميرا' : 'تعذّر تشغيل الكاميرا') }
   }
-  function stopCamera() { scanRef.current = false; streamRef.current?.getTracks().forEach(t=>t.stop()); streamRef.current=null; if(videoRef.current) videoRef.current.srcObject=null; setCameraOn(false) }
+  function stopCamera() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) scanRef.current = false; streamRef.current?.getTracks().forEach(t=>t.stop()); streamRef.current=null; if(videoRef.current) videoRef.current.srcObject=null; setCameraOn(false) }
   useEffect(() => () => { stopCamera() }, [])
 
   async function handleScan(code: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if (!code.trim() || scanning) return
     setScanning(true); setResult(null)
     try {

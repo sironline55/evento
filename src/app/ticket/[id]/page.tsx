@@ -5,10 +5,10 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C',orange:'#F05537',text:'#39364F',muted:'#6F7287',border:'#DBDAE3',bg:'#FAFAFA',card:'#FFFFFF',green:'#3A7D0A' }
 
 export default function TicketPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const { id } = useParams()
   const [reg, setReg] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -20,9 +20,11 @@ export default function TicketPage() {
       .then(({data})=>{ setReg(data); setLoading(false) })
   },[id])
 
-  function handlePrint() { window.print() }
+  function handlePrint() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) window.print() }
 
   async function handleShare() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if(navigator.share) {
       await navigator.share({ title:`تذكرة: ${reg?.events?.title}`, url:window.location.href })
     } else {

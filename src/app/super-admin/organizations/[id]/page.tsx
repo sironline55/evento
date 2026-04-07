@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = { navy:'#1C1C3B', primary:'#F47D31', cream:'#FBF8F5', teal:'#7EC8C8', card:'#FFFFFF', border:'#F0EDE8', muted:'#8B8FA8' }
 const PLANS = ['free','starter','pro','enterprise']
@@ -19,6 +18,7 @@ const FEATURES_LABELS: Record<string,string> = {
 }
 
 export default function OrgDetailPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const { id } = useParams()
   const [org, setOrg] = useState<any>(null)
   const [members, setMembers] = useState<any[]>([])
@@ -29,6 +29,7 @@ export default function OrgDetailPage() {
   useEffect(() => { if (id) loadData() }, [id])
 
   async function loadData() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     const [{ data: orgData }, { data: membersData }] = await Promise.all([
       sb.from('organizations').select('*').eq('id', id).single(),
       sb.from('org_members').select('id,email,full_name,role,status').eq('org_id', id).order('created_at')
@@ -37,6 +38,7 @@ export default function OrgDetailPage() {
   }
 
   async function save() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setSaving(true)
     await sb.from('organizations').update({
       plan: org.plan, status: org.status, max_events: org.max_events,
@@ -47,6 +49,7 @@ export default function OrgDetailPage() {
   }
 
   function toggleFeature(key: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setOrg((prev: any) => ({ ...prev, features: { ...prev.features, [key]: !prev.features?.[key] } }))
   }
 

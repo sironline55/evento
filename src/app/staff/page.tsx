@@ -5,10 +5,10 @@ import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C', orange:'#F05537', text:'#39364F', muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#3A7D0A' }
 
 export default function StaffDashboard() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const router = useRouter()
   const [worker, setWorker]       = useState<any>(null)
   const [assignments, setAssignments] = useState<any[]>([])
@@ -40,11 +40,13 @@ export default function StaffDashboard() {
   }, [])
 
   async function handleCheckIn(assignId: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     await sb.from('event_staff_assignments').update({ checked_in_at: new Date().toISOString(), status: 'confirmed' }).eq('id', assignId)
     setAssignments(a => a.map(x => x.id === assignId ? { ...x, checked_in_at: new Date().toISOString(), status: 'confirmed' } : x))
   }
 
   async function handleSignOut() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     await sb.auth.signOut()
     router.push('/staff/login')
   }

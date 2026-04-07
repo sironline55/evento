@@ -5,7 +5,6 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -20,6 +19,7 @@ const STATUS_CONFIG: Record<string,{label:string;color:string;bg:string}> = {
 }
 
 export default function AttendeesClient() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const { id } = useParams()
   const [regs, setRegs]       = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -36,6 +36,7 @@ export default function AttendeesClient() {
   }, [id])
 
   async function checkIn(regId: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     await sb.from('registrations')
       .update({ status: 'attended', checked_in_at: new Date().toISOString() })
       .eq('id', regId)
@@ -43,6 +44,7 @@ export default function AttendeesClient() {
   }
 
   function exportCSV() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     const rows = [
       ['الاسم','البريد','الهاتف','الحالة','التسجيل'],
       ...regs.map(r=>[r.guest_name||'',r.guest_email||'',r.guest_phone||'',r.status||'',r.created_at?.substring(0,10)||''])

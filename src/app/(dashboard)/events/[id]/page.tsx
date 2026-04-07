@@ -6,7 +6,6 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
 
-const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const C = { navy:'#1E0A3C',orange:'#F05537',text:'#39364F',muted:'#6F7287',border:'#DBDAE3',bg:'#FAFAFA',card:'#FFFFFF',green:'#3A7D0A' }
 const ST: Record<string,{label:string;color:string;bg:string}> = {
   registered:{label:'مسجّل',color:'#7B4FBF',bg:'#EDE9F7'},
@@ -24,6 +23,7 @@ const TABS = ['نظرة عامة','الحضور + الماسح','التذاكر 
 
 // Excel export
 function exportXLSX(regs: any[], eventTitle: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const rows = regs.map((r,i)=>({
     '#': i+1,
     'الاسم': r.guest_name||'',
@@ -53,6 +53,7 @@ function exportXLSX(regs: any[], eventTitle: string) {
 }
 
 function exportCSV(regs: any[], title: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const rows=[['الاسم','البريد','الجوال','التذكرة','الحالة','التسجيل','الحضور']]
   regs.forEach(r=>rows.push([r.guest_name,r.guest_email||r.email||'',r.guest_phone||r.phone||'',r.ticket_type||'عام',r.status,new Date(r.created_at).toLocaleDateString('ar-SA'),r.checked_in_at?new Date(r.checked_in_at).toLocaleTimeString('ar-SA'):'—']))
   const csv=rows.map(r=>r.join(',')).join('\n')
@@ -62,6 +63,7 @@ function exportCSV(regs: any[], title: string) {
 }
 
 function printList(regs: any[], title: string) {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const w=window.open('','_blank')!
   const rows=regs.map(r=>`<tr><td>${r.guest_name}</td><td>${r.ticket_type||'عام'}</td><td>${r.guest_email||r.email||''}</td><td>${r.status==='attended'?'✓':''}</td><td></td></tr>`).join('')
   w.document.write(`<html dir="rtl"><head><title>${title}</title><style>*{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:8px;font-size:12px}th{background:#1E0A3C;color:#fff}h2{color:#1E0A3C}@media print{button{display:none}}</style></head><body><h2>${title}</h2><p style="color:#666">${new Date().toLocaleDateString('ar-SA')} — ${regs.length} مسجّل</p><table><tr><th>الاسم</th><th>التذكرة</th><th>البريد</th><th>الحضور</th><th>توقيع</th></tr>${rows}</table><br><button onclick="window.print()" style="padding:10px 20px;background:#F05537;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px">🖨️ طباعة</button></body></html>`)
@@ -69,6 +71,7 @@ function printList(regs: any[], title: string) {
 }
 
 export default function EventDetailPage() {
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const {id}=useParams(); const router=useRouter()
   const [ev,setEv]=useState<any>(null)
   const [tab,setTab]=useState(0)
@@ -137,8 +140,10 @@ export default function EventDetailPage() {
     return ()=>{sb.removeChannel(ch)}
   },[id])
 
-  async function checkIn(regId:string){await sb.from('registrations').update({status:'attended',checked_in_at:new Date().toISOString()}).eq('id',regId)}
-  async function promoteWaitlist(regId:string){await sb.from('registrations').update({status:'registered'}).eq('id',regId);setWaitlist(w=>w.filter(x=>x.id!==regId))}
+  async function checkIn(regId:string){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('registrations').update({status:'attended',checked_in_at:new Date().toISOString()}).eq('id',regId)}
+  async function promoteWaitlist(regId:string){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('registrations').update({status:'registered'}).eq('id',regId);setWaitlist(w=>w.filter(x=>x.id!==regId))}
 
   // Camera scanner
   const processFrame=useCallback(async()=>{
@@ -154,6 +159,7 @@ export default function EventDetailPage() {
   },[id])
 
   async function startCamera(){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setCameraErr('')
     try{
       const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
@@ -162,10 +168,12 @@ export default function EventDetailPage() {
       setCameraOn(true);scanningRef.current=true;requestAnimationFrame(processFrame)
     }catch(e:any){setCameraErr(e.name==='NotAllowedError'?'يرجى السماح بالوصول للكاميرا':'تعذّر تشغيل الكاميرا')}
   }
-  function stopCamera(){scanningRef.current=false;streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null;if(videoRef.current)videoRef.current.srcObject=null;setCameraOn(false)}
+  function stopCamera(){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)scanningRef.current=false;streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null;if(videoRef.current)videoRef.current.srcObject=null;setCameraOn(false)}
   useEffect(()=>()=>{stopCamera()},[])
 
   async function handleScan(code:string){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if(!code.trim()||scanning) return
     setScanning(true);setScanRes(null)
     try{
@@ -183,6 +191,7 @@ export default function EventDetailPage() {
 
   // Discount
   async function saveCode(){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if(!newCode.code||!newCode.discount_value) return
     setSavingCode(true)
     const {data}=await sb.from('discount_codes').insert({event_id:id,code:newCode.code.toUpperCase(),discount_type:newCode.discount_type,discount_value:Number(newCode.discount_value),max_uses:newCode.max_uses?Number(newCode.max_uses):null,expires_at:newCode.expires_at||null}).select().single()
@@ -190,11 +199,14 @@ export default function EventDetailPage() {
     setNewCode({code:'',discount_type:'percentage',discount_value:'',max_uses:'',expires_at:''})
     setSavingCode(false)
   }
-  async function deleteCode(cid:string){await sb.from('discount_codes').delete().eq('id',cid);setCodes(c=>c.filter(x=>x.id!==cid))}
-  async function toggleCode(cid:string,active:boolean){await sb.from('discount_codes').update({is_active:!active}).eq('id',cid);setCodes(c=>c.map(x=>x.id===cid?{...x,is_active:!active}:x))}
+  async function deleteCode(cid:string){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('discount_codes').delete().eq('id',cid);setCodes(c=>c.filter(x=>x.id!==cid))}
+  async function toggleCode(cid:string,active:boolean){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('discount_codes').update({is_active:!active}).eq('id',cid);setCodes(c=>c.map(x=>x.id===cid?{...x,is_active:!active}:x))}
 
   // Staff requests
   async function saveStaffReq(){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if(!newStaff.role_name) return
     setSavingStaff(true)
     const {data}=await sb.from('staffing_requests').insert({event_id:id,role_name:newStaff.role_name,quantity:Number(newStaff.quantity)||1,notes:newStaff.notes||null,status:'open'}).select().single()
@@ -202,11 +214,14 @@ export default function EventDetailPage() {
     setNewStaff({role_name:'',quantity:'1',notes:''})
     setSavingStaff(false)
   }
-  async function deleteStaffReq(sid:string){await sb.from('staffing_requests').delete().eq('id',sid);setStaffReqs(s=>s.filter(x=>x.id!==sid))}
-  async function updateStaffStatus(sid:string,status:string){await sb.from('staffing_requests').update({status}).eq('id',sid);setStaffReqs(s=>s.map(x=>x.id===sid?{...x,status}:x))}
+  async function deleteStaffReq(sid:string){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('staffing_requests').delete().eq('id',sid);setStaffReqs(s=>s.filter(x=>x.id!==sid))}
+  async function updateStaffStatus(sid:string,status:string){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('staffing_requests').update({status}).eq('id',sid);setStaffReqs(s=>s.map(x=>x.id===sid?{...x,status}:x))}
 
   // Settings
   async function saveSettings(){
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setSaving(true)
     await sb.from('events').update({status:newStatus,waitlist_enabled:waitlistEnabled,form_fields:formFields,updated_at:new Date().toISOString()}).eq('id',id)
     setSaving(false)
