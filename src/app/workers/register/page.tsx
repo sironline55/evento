@@ -5,10 +5,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-const sb = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const C = { navy:'#1E0A3C', orange:'#F05537', text:'#1F1F2E', muted:'#4A4A68', border:'#C8C6D4', bg:'#F4F3F8', card:'#FFFFFF', green:'#1A6B00' }
 

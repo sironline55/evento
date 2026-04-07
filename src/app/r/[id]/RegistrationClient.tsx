@@ -7,10 +7,7 @@ import { WorkerOptIn } from '@/components/workers/WorkerOptIn'
 import { QRService } from '@/services/QRService'
 import QRCode from 'qrcode'
 
-const sb = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 export default function RegistrationClient() {
   const { id } = useParams()

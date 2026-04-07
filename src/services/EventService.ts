@@ -2,10 +2,7 @@ import * as XLSX from 'xlsx'
 import { createBrowserClient } from '@supabase/ssr'
 import { Event, EventStats, Registration } from '../types'
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 export type EventCreateParams = Omit<Event, 'id' | 'created_at' | 'updated_at'>
 export type EventUpdateParams = Partial<Omit<Event, 'id' | 'created_at' | 'updated_at' | 'created_by'>>

@@ -2,10 +2,7 @@ import QRCode from 'qrcode'
 import { createBrowserClient } from '@supabase/ssr'
 import { v4 as uuidv4 } from 'uuid'
 
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 export class QRService {
   /** توليد QR code كـ Data URL */
