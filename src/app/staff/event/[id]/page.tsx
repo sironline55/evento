@@ -73,7 +73,8 @@ export default function StaffEventPage() {
     } catch { alert('تعذّر تشغيل الكاميرا') }
   }
   function stopCamera() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) scanRef.current=false; streamRef.current?.getTracks().forEach(t=>t.stop()); if(videoRef.current)videoRef.current.srcObject=null; setCameraOn(false) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    scanRef.current=false; streamRef.current?.getTracks().forEach(t=>t.stop()); if(videoRef.current)videoRef.current.srcObject=null; setCameraOn(false) }
   useEffect(()=>()=>{stopCamera()},[])
 
   async function handleScan(code: string) {

@@ -211,32 +211,44 @@ export default function NewEventPage() {
   }
 
   function addTicket() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setTickets(t=>[...t,{id:Date.now(),name:'',type:'free',price:'',qty:'',desc:'',saleStart:'',saleEnd:''}]) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setTickets(t=>[...t,{id:Date.now(),name:'',type:'free',price:'',qty:'',desc:'',saleStart:'',saleEnd:''}]) }
   function removeTicket(id:number) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setTickets(t=>t.filter(tk=>tk.id!==id)) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setTickets(t=>t.filter(tk=>tk.id!==id)) }
   function updateTicket(id:number, f:keyof Ticket, v:string) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setTickets(t=>t.map(tk=>tk.id===id?{...tk,[f]:v}:tk)) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setTickets(t=>t.map(tk=>tk.id===id?{...tk,[f]:v}:tk)) }
 
   function addFaq() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setFaqs(f=>[...f,{q:'',a:''}]) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setFaqs(f=>[...f,{q:'',a:''}]) }
   function removeFaq(i:number) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setFaqs(f=>f.filter((_,idx)=>idx!==i)) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setFaqs(f=>f.filter((_,idx)=>idx!==i)) }
   function updateFaq(i:number, f:'q'|'a', v:string) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setFaqs(fs=>fs.map((faq,idx)=>idx===i?{...faq,[f]:v}:faq)) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setFaqs(fs=>fs.map((faq,idx)=>idx===i?{...faq,[f]:v}:faq)) }
 
   function addAgenda() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setAgenda(a=>[...a,{time:'',title:'',speaker:''}]) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setAgenda(a=>[...a,{time:'',title:'',speaker:''}]) }
   function removeAgenda(i:number) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setAgenda(a=>a.filter((_,idx)=>idx!==i)) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setAgenda(a=>a.filter((_,idx)=>idx!==i)) }
   function updateAgenda(i:number, f:keyof AgendaItem, v:string) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setAgenda(a=>a.map((it,idx)=>idx===i?{...it,[f]:v}:it)) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setAgenda(a=>a.map((it,idx)=>idx===i?{...it,[f]:v}:it)) }
 
   function addLineup() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setLineup(l=>[...l,{name:'',role:'',bio:''}]) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setLineup(l=>[...l,{name:'',role:'',bio:''}]) }
   function removeLineup(i:number) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setLineup(l=>l.filter((_,idx)=>idx!==i)) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setLineup(l=>l.filter((_,idx)=>idx!==i)) }
   function updateLineup(i:number, f:keyof LineupMember, v:string) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!) setLineup(l=>l.map((it,idx)=>idx===i?{...it,[f]:v}:it)) }
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    setLineup(l=>l.map((it,idx)=>idx===i?{...it,[f]:v}:it)) }
 
   async function publish() {
   const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
