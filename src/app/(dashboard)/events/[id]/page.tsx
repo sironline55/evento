@@ -141,9 +141,11 @@ export default function EventDetailPage() {
   },[id])
 
   async function checkIn(regId:string){
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('registrations').update({status:'attended',checked_in_at:new Date().toISOString()}).eq('id',regId)}
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    await sb.from('registrations').update({status:'attended',checked_in_at:new Date().toISOString()}).eq('id',regId)}
   async function promoteWaitlist(regId:string){
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('registrations').update({status:'registered'}).eq('id',regId);setWaitlist(w=>w.filter(x=>x.id!==regId))}
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    await sb.from('registrations').update({status:'registered'}).eq('id',regId);setWaitlist(w=>w.filter(x=>x.id!==regId))}
 
   // Camera scanner
   const processFrame=useCallback(async()=>{
@@ -169,7 +171,8 @@ export default function EventDetailPage() {
     }catch(e:any){setCameraErr(e.name==='NotAllowedError'?'يرجى السماح بالوصول للكاميرا':'تعذّر تشغيل الكاميرا')}
   }
   function stopCamera(){
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)scanningRef.current=false;streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null;if(videoRef.current)videoRef.current.srcObject=null;setCameraOn(false)}
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    scanningRef.current=false;streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null;if(videoRef.current)videoRef.current.srcObject=null;setCameraOn(false)}
   useEffect(()=>()=>{stopCamera()},[])
 
   async function handleScan(code:string){
@@ -200,9 +203,11 @@ export default function EventDetailPage() {
     setSavingCode(false)
   }
   async function deleteCode(cid:string){
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('discount_codes').delete().eq('id',cid);setCodes(c=>c.filter(x=>x.id!==cid))}
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    await sb.from('discount_codes').delete().eq('id',cid);setCodes(c=>c.filter(x=>x.id!==cid))}
   async function toggleCode(cid:string,active:boolean){
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('discount_codes').update({is_active:!active}).eq('id',cid);setCodes(c=>c.map(x=>x.id===cid?{...x,is_active:!active}:x))}
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    await sb.from('discount_codes').update({is_active:!active}).eq('id',cid);setCodes(c=>c.map(x=>x.id===cid?{...x,is_active:!active}:x))}
 
   // Staff requests
   async function saveStaffReq(){
@@ -215,9 +220,11 @@ export default function EventDetailPage() {
     setSavingStaff(false)
   }
   async function deleteStaffReq(sid:string){
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('staffing_requests').delete().eq('id',sid);setStaffReqs(s=>s.filter(x=>x.id!==sid))}
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    await sb.from('staffing_requests').delete().eq('id',sid);setStaffReqs(s=>s.filter(x=>x.id!==sid))}
   async function updateStaffStatus(sid:string,status:string){
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)await sb.from('staffing_requests').update({status}).eq('id',sid);setStaffReqs(s=>s.map(x=>x.id===sid?{...x,status}:x))}
+  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    await sb.from('staffing_requests').update({status}).eq('id',sid);setStaffReqs(s=>s.map(x=>x.id===sid?{...x,status}:x))}
 
   // Settings
   async function saveSettings(){
