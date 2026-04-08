@@ -19,7 +19,7 @@ export class WorkerService {
     source?: string
     attendee_id?: string
   }) {
-    const { data: worker, error } = await supabase
+    const { data: worker, error } = await this.supabase
       .from('worker_profiles')
       .insert({
         ...data,
@@ -47,7 +47,7 @@ export class WorkerService {
     limit?: number
     offset?: number
   }) {
-    let query = supabase
+    let query = this.supabase
       .from('worker_profiles')
       .select('*')
       .in('status', ['active', 'pending'])
@@ -89,14 +89,14 @@ export class WorkerService {
 
   /** إحصائيات قاعدة البيانات */
   static async getStats() {
-    const { count: total } = await supabase
+    const { count: total } = await this.supabase
       .from('worker_profiles')
       .select('*', { count: 'exact', head: true })
-    const { count: active } = await supabase
+    const { count: active } = await this.supabase
       .from('worker_profiles')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'active')
-    const { count: available } = await supabase
+    const { count: available } = await this.supabase
       .from('worker_profiles')
       .select('*', { count: 'exact', head: true })
       .eq('is_available', true)
@@ -117,7 +117,7 @@ export class WorkerService {
     gender_preference?: string
     description?: string
   }) {
-    const { data: req, error } = await supabase
+    const { data: req, error } = await this.supabase
       .from('staffing_requests')
       .insert({ ...data, workers_confirmed: 0, status: 'open' })
       .select()

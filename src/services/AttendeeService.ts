@@ -5,7 +5,7 @@ import { Registration } from '../types'
 export class AttendeeService {
   /** جلب كل المسجلين لفعالية */
   async getByEvent(eventId: string): Promise<Registration[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('registrations')
       .select('*')
       .eq('event_id', eventId)
@@ -16,7 +16,7 @@ export class AttendeeService {
 
   /** جلب مسجل واحد */
   async getById(id: string): Promise<Registration | null> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('registrations')
       .select('*')
       .eq('id', id)
@@ -36,7 +36,7 @@ export class AttendeeService {
       updates.checked_in_at = checked_in_at
       updates.check_in_method = 'manual'
     }
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('registrations')
       .update(updates)
       .eq('id', id)
@@ -48,7 +48,7 @@ export class AttendeeService {
 
   /** إلغاء تسجيل */
   async cancel(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.supabase
       .from('registrations')
       .update({ status: 'cancelled' })
       .eq('id', id)
@@ -57,7 +57,7 @@ export class AttendeeService {
 
   /** إحصائيات سريعة */
   async getStats(eventId: string) {
-    const { data } = await supabase
+    const { data } = await this.supabase
       .from('registrations')
       .select('status')
       .eq('event_id', eventId)

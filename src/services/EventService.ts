@@ -9,7 +9,7 @@ export type EventUpdateParams = Partial<Omit<Event, 'id' | 'created_at' | 'updat
 export class EventService {
   /** قائمة فعاليات المستخدم الحالي */
   async list(userId: string): Promise<Event[]> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('events')
       .select('*')
       .eq('created_by', userId)
@@ -20,7 +20,7 @@ export class EventService {
 
   /** فعالية واحدة بالـ ID */
   async getById(id: string): Promise<Event | null> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('events')
       .select('*')
       .eq('id', id)
@@ -31,7 +31,7 @@ export class EventService {
 
   /** إنشاء فعالية جديدة */
   async create(params: EventCreateParams): Promise<Event> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('events')
       .insert(params)
       .select()
@@ -42,7 +42,7 @@ export class EventService {
 
   /** تحديث فعالية */
   async update(id: string, updates: EventUpdateParams): Promise<Event> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('events')
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -54,7 +54,7 @@ export class EventService {
 
   /** حذف فعالية */
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.supabase
       .from('events')
       .delete()
       .eq('id', id)
@@ -63,7 +63,7 @@ export class EventService {
 
   /** إحصائيات فعالية */
   async getStats(eventId: string): Promise<EventStats> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('registrations')
       .select('status')
       .eq('event_id', eventId)
@@ -87,7 +87,7 @@ export class EventService {
 
   /** تصدير المسجلين كـ Excel */
   async exportRegistrationsExcel(eventId: string): Promise<ArrayBuffer> {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('registrations')
       .select('*')
       .eq('event_id', eventId)

@@ -37,7 +37,7 @@ export class QRService {
       v: 1
     })
 
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('registrations')
       .insert({
         id: registrationId,
@@ -76,7 +76,7 @@ export class QRService {
       return { valid: false, message: 'بيانات QR غير مكتملة' }
     }
 
-    const { data: reg, error } = await supabase
+    const { data: reg, error } = await this.supabase
       .from('registrations')
       .select('*, events(title)')
       .eq('id', parsed.id)
@@ -96,7 +96,7 @@ export class QRService {
     }
 
     // تسجيل الدخول
-    const { data: updated, error: updateError } = await supabase
+    const { data: updated, error: updateError } = await this.supabase
       .from('registrations')
       .update({
         status: 'attended',
@@ -114,7 +114,7 @@ export class QRService {
 
   /** جلب جميع تسجيلات فعالية مع إحصائيات */
   static async getEventRegistrations(eventId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await this.supabase
       .from('registrations')
       .select('*')
       .eq('event_id', eventId)
