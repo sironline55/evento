@@ -31,7 +31,7 @@ export default function LoginPage() {
     setLoading(true); setError('')
     const { error } = await sb.auth.signInWithPassword({ email, password })
     if (error) { setError(error.message); setLoading(false) }
-    else window.location.href = '/'
+    else window.location.href = '/events'
   }
 
   async function loginWithGoogle() {
@@ -39,7 +39,7 @@ export default function LoginPage() {
     setGoogleLoading(true); setError('')
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/' }
+      options: { redirectTo: window.location.origin + '/events' }
     })
     if (error) { setError(error.message); setGoogleLoading(false) }
   }
