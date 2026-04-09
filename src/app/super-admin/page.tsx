@@ -29,7 +29,7 @@ export default function SuperAdminPage() {
     sb.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
       const { data: p } = await sb.from('profiles').select('role').eq('id', data.user.id).single()
-      if (p?.role !== 'super_admin') { router.push('/'); return }
+      if (p?.role !== 'super_admin') { window.location.href = '/'; return }
     })
     loadData()
   }, [])

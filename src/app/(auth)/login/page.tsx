@@ -31,7 +31,7 @@ export default function LoginPage() {
     setLoading(true); setError('')
     const { error } = await sb.auth.signInWithPassword({ email, password })
     if (error) { setError(error.message); setLoading(false) }
-    else router.push('/')
+    else window.location.href = '/'
   }
 
   async function loginWithGoogle() {
