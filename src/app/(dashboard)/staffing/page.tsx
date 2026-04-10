@@ -500,7 +500,8 @@ export default function StaffingPage() {
                       <div style={{flex:1, minWidth:0}}>
                         <div style={{display:'flex', alignItems:'center', gap:6, marginBottom:2}}>
                           <p style={{margin:0, fontWeight:700, color:C.navy, fontSize:14, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{w.full_name}</p>
-                          {w.is_verified && <span style={{fontSize:13}}>✅</span>}
+                          {w.nafath_verified && <span title='موثّق بنفاذ' style={{fontSize:11,background:'#EAF7E0',color:'#1A5A00',padding:'2px 7px',borderRadius:8,fontWeight:700,border:'1px solid #C3E6C3'}}>🛡️ نفاذ</span>}
+                        {!w.nafath_verified && w.is_verified && <span style={{fontSize:13}}>✅</span>}
                         </div>
                         <div style={{display:'flex', gap:8}}>
                           <span style={{fontSize:11, color:C.muted}}>📍 {w.city}</span>
@@ -544,3 +545,4 @@ export default function StaffingPage() {
     </div>
   )
 }
+
