@@ -1,10 +1,9 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useRef, useEffect, useCallback, Suspense } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo, Suspense } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -12,7 +11,7 @@ const C = {
 }
 
 type ScanResult = { type:'success'|'warning'|'error'; message:string; name?:string; event?:string; ticket_type?:string; ref?:string }
-type HistoryItem = { name:string; event:string; time:string; type:string; ref?:string }
+type HistoryItem = { name:string; event:string; time:string; ref?:string }
 
 const STYLES: Record<string,{bg:string;border:string;color:string;icon:string}> = {
   success:{ bg:'#EAF7E0', border:C.green, color:'#1A5A00', icon:'✅' },
@@ -21,21 +20,26 @@ const STYLES: Record<string,{bg:string;border:string;color:string;icon:string}> 
 }
 
 function ScannerInner() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  // ✅ FIX 1: Single Supabase client via useMemo
+  const sb = useMemo(() => createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ), [])
+
   const sp = useSearchParams()
   const preselectedEvent = sp.get('event')
 
-  const [events, setEvents]     = useState<any[]>([])
-  const [selEvent, setSelEvent] = useState<string>(preselectedEvent||'all')
+  const [events, setEvents]         = useState<any[]>([])
+  const [selEvent, setSelEvent]     = useState<string>(preselectedEvent||'all')
   const [selEventName, setSelEventName] = useState<string>('')
-  const [qrInput, setQrInput]   = useState('')
-  const [result, setResult]     = useState<ScanResult|null>(null)
-  const [loading, setLoading]   = useState(false)
-  const [history, setHistory]   = useState<HistoryItem[]>([])
-  const [cameraOn, setCameraOn] = useState(false)
-  const [cameraErr, setCameraErr] = useState('')
-  const [stats, setStats] = useState({ total:0, success:0, already:0, invalid:0 })
-  const [liveCount, setLiveCount] = useState<number|null>(null)
+  const [qrInput, setQrInput]       = useState('')
+  const [result, setResult]         = useState<ScanResult|null>(null)
+  const [loading, setLoading]       = useState(false)
+  const [history, setHistory]       = useState<HistoryItem[]>([])
+  const [cameraOn, setCameraOn]     = useState(false)
+  const [cameraErr, setCameraErr]   = useState('')
+  const [stats, setStats]           = useState({ total:0, success:0, already:0, invalid:0 })
+  const [liveCount, setLiveCount]   = useState<number|null>(null)
   const videoRef  = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const inputRef  = useRef<HTMLInputElement>(null)
@@ -49,33 +53,35 @@ function ScannerInner() {
       .in('status',['published','active','draft'])
       .order('start_date',{ascending:false})
       .limit(50)
-      .then(({data})=>{
+      .then(({data}) => {
         setEvents(data||[])
         if (preselectedEvent) {
-          const ev = (data||[]).find((e:any)=>e.id===preselectedEvent)
+          const ev = (data||[]).find((e:any) => e.id === preselectedEvent)
           if (ev) setSelEventName(ev.title)
         }
       })
-  },[])
+  }, [])
 
-  // Live attendance count for selected event
+  // ✅ FIX 2: Live count using .select('id') — no head:true
   useEffect(() => {
     if (selEvent === 'all') { setLiveCount(null); return }
     const fetchCount = () =>
-      sb.from('registrations').select('*',{count:'exact',head:true}).eq('event_id',selEvent).eq('status','attended')
-        .then(({count})=>setLiveCount(count||0))
+      sb.from('registrations')
+        .select('id')
+        .eq('event_id', selEvent)
+        .eq('status', 'attended')
+        .then(({ data }) => setLiveCount(data?.length || 0))
     fetchCount()
     const channel = sb.channel(`reg-${selEvent}`)
-      .on('postgres_changes',{ event:'UPDATE', schema:'public', table:'registrations', filter:`event_id=eq.${selEvent}` },fetchCount)
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'registrations', filter:`event_id=eq.${selEvent}` }, fetchCount)
       .subscribe()
     return () => { sb.removeChannel(channel) }
-  },[selEvent])
+  }, [selEvent])
 
   const handleCodeFound = useCallback(async (code: string) => {
     if (!code || loading || code === lastScanned.current) return
     lastScanned.current = code
     setTimeout(() => { lastScanned.current = '' }, 2000)
-
     setLoading(true); setResult(null)
     try {
       let q = sb.from('registrations')
@@ -84,22 +90,32 @@ function ScannerInner() {
       if (selEvent !== 'all') q = q.eq('event_id', selEvent)
       const { data: reg } = await q.maybeSingle()
 
-      setStats(s=>({...s, total:s.total+1}))
+      setStats(s => ({ ...s, total: s.total+1 }))
       if (!reg) {
         setResult({ type:'error', message:'رمز غير صالح أو لا ينتمي لهذه الفعالية' })
-        setStats(s=>({...s, invalid:s.invalid+1}))
-      } else if (reg.status==='attended') {
+        setStats(s => ({ ...s, invalid: s.invalid+1 }))
+      } else if (reg.status === 'attended') {
         setResult({ type:'warning', message:'تم مسح هذه التذكرة مسبقاً', name:reg.guest_name, event:(reg.events as any)?.title, ticket_type:reg.ticket_type, ref:reg.ticket_reference })
-        setStats(s=>({...s, already:s.already+1}))
+        setStats(s => ({ ...s, already: s.already+1 }))
       } else {
-        await sb.from('registrations').update({ status:'attended', checked_in_at:new Date().toISOString() }).eq('id',reg.id)
+        const { error } = await sb.from('registrations').update({
+          status: 'attended',
+          checked_in_at: new Date().toISOString(),
+          check_in_method: 'qr_scan',
+        }).eq('id', reg.id)
+        if (error) throw error
         setResult({ type:'success', message:'تم تسجيل الحضور ✓', name:reg.guest_name, event:(reg.events as any)?.title, ticket_type:reg.ticket_type, ref:reg.ticket_reference })
-        setHistory(h=>[{ name:reg.guest_name, event:(reg.events as any)?.title||'—', time:new Date().toLocaleTimeString('ar-SA'), type:'success', ref:reg.ticket_reference }, ...h.slice(0,29)])
-        setStats(s=>({...s, success:s.success+1}))
+        setHistory(h => [{ name:reg.guest_name, event:(reg.events as any)?.title||'—', time:new Date().toLocaleTimeString('ar-SA'), ref:reg.ticket_reference }, ...h.slice(0,29)])
+        setStats(s => ({ ...s, success: s.success+1 }))
       }
-    } catch { setResult({ type:'error', message:'خطأ في الاتصال' }) }
-    finally { setLoading(false); setQrInput(''); setTimeout(()=>inputRef.current?.focus(),100) }
-  },[selEvent, loading])
+    } catch(e: any) {
+      console.error('scan error:', e)
+      setResult({ type:'error', message:'خطأ في الاتصال: ' + (e?.message||'') })
+    } finally {
+      setLoading(false); setQrInput('')
+      setTimeout(() => inputRef.current?.focus(), 100)
+    }
+  }, [selEvent, loading])
 
   const processFrame = useCallback(async () => {
     if (!scanActive.current || !videoRef.current || !canvasRef.current) return
@@ -107,12 +123,11 @@ function ScannerInner() {
     if (video.readyState < 2) { requestAnimationFrame(processFrame); return }
     const canvas = canvasRef.current
     canvas.width = video.videoWidth; canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    const ctx = canvas.getContext('2d'); if (!ctx) return
     ctx.drawImage(video, 0, 0)
     if ('BarcodeDetector' in window) {
       try {
-        const bd = new (window as any).BarcodeDetector({formats:['qr_code']})
+        const bd = new (window as any).BarcodeDetector({ formats:['qr_code'] })
         const codes = await bd.detect(canvas)
         if (codes.length > 0) {
           const code = codes[0].rawValue
@@ -124,10 +139,10 @@ function ScannerInner() {
       } catch {}
     }
     requestAnimationFrame(processFrame)
-  },[handleCodeFound])
+  }, [handleCodeFound])
 
+  // ✅ FIX 3: startCamera/stopCamera use shared sb — no new clients
   async function startCamera() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setCameraErr('')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' } })
@@ -136,15 +151,14 @@ function ScannerInner() {
       setCameraOn(true)
       scanActive.current = true
       requestAnimationFrame(processFrame)
-    } catch(e:any) {
-      setCameraErr(e.name==='NotAllowedError' ? 'يرجى السماح للمتصفح بالوصول للكاميرا' : 'تعذّر تشغيل الكاميرا')
+    } catch(e: any) {
+      setCameraErr(e.name === 'NotAllowedError' ? 'يرجى السماح للمتصفح بالوصول للكاميرا' : 'تعذّر تشغيل الكاميرا')
     }
   }
 
   function stopCamera() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     scanActive.current = false
-    streamRef.current?.getTracks().forEach(t=>t.stop())
+    streamRef.current?.getTracks().forEach(t => t.stop())
     streamRef.current = null
     if (videoRef.current) videoRef.current.srcObject = null
     setCameraOn(false)
@@ -178,11 +192,11 @@ function ScannerInner() {
         {/* Stats */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
           {[
-            { label:'إجمالي', value:stats.total, color:C.navy, bg:'#F0EDF7' },
-            { label:'نجاح', value:stats.success, color:C.green, bg:'#EAF7E0' },
+            { label:'إجمالي', value:stats.total,   color:C.navy,    bg:'#F0EDF7' },
+            { label:'نجاح',   value:stats.success, color:C.green,   bg:'#EAF7E0' },
             { label:'مسبقاً', value:stats.already, color:'#B07000', bg:'#FFF8E8' },
-            { label:'خاطئ', value:stats.invalid, color:'#DC2626', bg:'#FEF2F2' },
-          ].map(s=>(
+            { label:'خاطئ',   value:stats.invalid, color:'#DC2626', bg:'#FEF2F2' },
+          ].map(s => (
             <div key={s.label} style={{ background:s.bg, borderRadius:7, padding:'8px 10px' }}>
               <p style={{ fontSize:18, fontWeight:800, color:s.color, margin:0 }}>{s.value}</p>
               <p style={{ fontSize:10, color:C.muted, margin:0 }}>{s.label}</p>
@@ -190,7 +204,6 @@ function ScannerInner() {
           ))}
         </div>
 
-        {/* Live count */}
         {liveCount !== null && (
           <div style={{ marginTop:10, padding:'8px 12px', background:'#EAF7E0', borderRadius:6, display:'flex', justifyContent:'space-between' }}>
             <span style={{ fontSize:12, color:C.green, fontWeight:700 }}>● حضور مباشر لهذه الفعالية</span>
@@ -203,13 +216,13 @@ function ScannerInner() {
         {/* Event selector */}
         <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:14, marginBottom:14 }}>
           <label style={{ fontSize:12, fontWeight:700, color:C.navy, display:'block', marginBottom:6 }}>تصفية الفعالية</label>
-          <select value={selEvent} onChange={e=>{
+          <select value={selEvent} onChange={e => {
             setSelEvent(e.target.value)
-            const ev = events.find(x=>x.id===e.target.value)
+            const ev = events.find(x => x.id === e.target.value)
             setSelEventName(ev?.title||'')
           }} style={{ width:'100%', padding:'9px 12px', border:`1px solid ${C.border}`, borderRadius:6, fontSize:13, color:C.text, background:C.bg, outline:'none', fontFamily:'inherit' }}>
             <option value="all">جميع الفعاليات</option>
-            {events.map(ev=>(
+            {events.map(ev => (
               <option key={ev.id} value={ev.id}>{ev.title}</option>
             ))}
           </select>
@@ -241,16 +254,15 @@ function ScannerInner() {
               boxShadow:'0 0 0 1000px rgba(0,0,0,0.4)',
               pointerEvents:'none'
             }}>
-              {/* Corner markers */}
-              {['top:0;right:0','top:0;left:0','bottom:0;right:0','bottom:0;left:0'].map((pos,i)=>(
+              {['top:0;right:0','top:0;left:0','bottom:0;right:0','bottom:0;left:0'].map((pos,i) => (
                 <div key={i} style={{
                   position:'absolute',
                   ...(Object.fromEntries(pos.split(';').map(p=>p.split(':')))),
                   width:20, height:20,
-                  borderTop: pos.includes('top') ? '3px solid #fff' : 'none',
+                  borderTop:    pos.includes('top')    ? '3px solid #fff' : 'none',
                   borderBottom: pos.includes('bottom') ? '3px solid #fff' : 'none',
-                  borderRight: pos.includes('right') ? '3px solid #fff' : 'none',
-                  borderLeft: pos.includes('left') ? '3px solid #fff' : 'none',
+                  borderRight:  pos.includes('right')  ? '3px solid #fff' : 'none',
+                  borderLeft:   pos.includes('left')   ? '3px solid #fff' : 'none',
                 }}/>
               ))}
             </div>
@@ -276,15 +288,15 @@ function ScannerInner() {
             <input
               ref={inputRef}
               value={qrInput}
-              onChange={e=>setQrInput(e.target.value)}
-              onKeyDown={e=>{ if(e.key==='Enter') handleCodeFound(qrInput.trim()) }}
+              onChange={e => setQrInput(e.target.value)}
+              onKeyDown={e => { if(e.key==='Enter') handleCodeFound(qrInput.trim()) }}
               placeholder="رمز التذكرة أو QR..."
               style={{
                 flex:1, padding:'10px 14px', border:`2px solid ${C.border}`,
                 borderRadius:7, fontSize:14, outline:'none', fontFamily:'inherit', color:C.text, background:C.bg
               }}
-              onFocus={e=>(e.target.style.borderColor=C.orange)}
-              onBlur={e=>(e.target.style.borderColor=C.border)}
+              onFocus={e => (e.target.style.borderColor=C.orange)}
+              onBlur={e => (e.target.style.borderColor=C.border)}
               autoFocus
             />
             <button onClick={()=>handleCodeFound(qrInput.trim())} disabled={loading||!qrInput.trim()} style={{
@@ -293,6 +305,9 @@ function ScannerInner() {
               opacity:loading||!qrInput.trim()?0.6:1, fontFamily:'inherit'
             }}>{loading?'...':'✓ تحقق'}</button>
           </div>
+          <p style={{ fontSize:11, color:C.muted, marginTop:6, margin:'6px 0 0' }}>
+            💡 اكتب رمز التذكرة يدوياً أو وجّه ماسح USB — ثم اضغط Enter
+          </p>
         </div>
 
         {/* Result */}
@@ -336,7 +351,7 @@ function ScannerInner() {
               <button onClick={()=>setHistory([])} style={{ fontSize:11, color:C.muted, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit' }}>مسح</button>
             </div>
             <div style={{ maxHeight:300, overflowY:'auto' }}>
-              {history.map((h,i)=>(
+              {history.map((h,i) => (
                 <div key={i} style={{ display:'grid', gridTemplateColumns:'20px 1fr auto', padding:'9px 16px', borderBottom:i<history.length-1?`1px solid ${C.border}`:'none', gap:10, alignItems:'center' }}>
                   <span style={{ fontSize:13 }}>✅</span>
                   <div>
@@ -351,12 +366,12 @@ function ScannerInner() {
         )}
       </div>
       <style>{`@keyframes pop{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}`}</style>
-      <div className="h-20 md:h-0"/>
+      <div style={{ height:80 }}/>
     </div>
   )
 }
 
+// ✅ FIX: ScannerPage wrapper — no Supabase client here
 export default function ScannerPage() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   return <Suspense><ScannerInner/></Suspense>
 }
