@@ -3,24 +3,41 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-arabic: var(--font-tajawal), "Tajawal", Arial, sans-serif;
+
+  /* EventVMS brand colors */
+  --color-navy:   #1E0A3C;
+  --color-orange: #F05537;
+  --color-text:   #39364F;
+  --color-muted:  #6F7287;
+  --color-border: #DBDAE3;
+  --color-bg:     #FAFAFA;
+  --color-card:   #FFFFFF;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-arabic);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Arabic heading scale — matches Qoyod */
+h1 { font-size: 28px; font-weight: 800; line-height: 1.3; }
+h2 { font-size: 20px; font-weight: 700; line-height: 1.4; }
+h3 { font-size: 16px; font-weight: 700; line-height: 1.4; }
+h4 { font-size: 14px; font-weight: 600; line-height: 1.5; }
+
+p  { margin: 0; }
+
+/* Qoyod-style scrollbar */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: #DBDAE3; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #a0a0b0; }
