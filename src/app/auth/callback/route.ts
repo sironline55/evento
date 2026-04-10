@@ -1,6 +1,5 @@
-export const dynamic = 'force-dynamic'
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -8,35 +7,14 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get('next') ?? '/events'
 
   if (code) {
-    // Create redirect response first
-    const redirectUrl = origin + next
-    const response = NextResponse.redirect(redirectUrl)
-
-    // Create supabase client that writes cookies to the redirect response
-    const supabase = createServerClient(
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            // Write cookies onto the redirect response so browser receives them
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
-            })
-          },
-        },
-      }
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
-
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return response
+      return NextResponse.redirect(`${origin}${next}`)
     }
   }
-
-  // فشل — أعد للـ login
-  return NextResponse.redirect(origin + '/login?error=auth_failed')
+  return NextResponse.redirect(`${origin}/login?error=auth_callback_error`)
 }
