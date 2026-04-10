@@ -1,164 +1,597 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
-  muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF'
+  muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#3A7D0A'
+}
+const inp: React.CSSProperties = {
+  width:'100%', padding:'10px 14px', border:`1px solid ${C.border}`, borderRadius:8,
+  fontSize:14, outline:'none', fontFamily:'inherit', color:C.text,
+  background:C.card, boxSizing:'border-box'
+}
+const lbl: React.CSSProperties = { fontSize:12, fontWeight:600, color:C.text, display:'block', marginBottom:5 }
+
+const CITIES = ['الرياض','جدة','الدمام','مكة المكرمة','المدينة المنورة','الخبر','تبوك','أبها']
+const INDUSTRIES = ['فعاليات وترفيه','تعليم وتدريب','أعمال ومؤتمرات','رياضة ونشاط','ثقافة وفنون','صحة وطب','حكومة وقطاع عام','أخرى']
+const ROLES: Record<string,{label:string;color:string;bg:string;perms:string[]}> = {
+  owner:   { label:'مالك',    color:'#5B3FA0', bg:'#EDE9F7', perms:['كل الصلاحيات'] },
+  admin:   { label:'مدير',    color:C.navy,    bg:'#E8E4F0', perms:['إدارة الفعاليات','إدارة الفريق','التقارير'] },
+  editor:  { label:'محرر',    color:C.orange,  bg:'#FEF0ED', perms:['إنشاء الفعاليات','تعديل الفعاليات'] },
+  scanner: { label:'ماسح',    color:C.green,   bg:'#EAF7E0', perms:['مسح التذاكر فقط'] },
+  viewer:  { label:'مشاهد',   color:C.muted,   bg:'#F1F1F1', perms:['قراءة التقارير فقط'] },
 }
 
+type Org    = { id:string; name:string; name_ar:string|null; email:string|null; phone:string|null; logo_url:string|null; website:string|null; city:string|null; industry:string|null; description:string|null; plan:string|null; status:string|null; max_members:number|null; owner_id:string|null; created_at:string }
+type Member = { id:string; email:string; full_name:string|null; role:string|null; status:string|null; invited_by:string|null; created_at:string; last_active_at:string|null }
+
 const TABS = [
-  { id:'profile', label:'ملف المنظِّم' },
-  { id:'team',    label:'إدارة الفريق' },
-  { id:'plan',    label:'إدارة الباقة' },
+  { id:'org',    icon:'🏢', label:'المنظمة' },
+  { id:'team',   icon:'👥', label:'الفريق' },
+  { id:'roles',  icon:'🎭', label:'الأدوار' },
+  { id:'plan',   icon:'💳', label:'الباقة' },
 ]
 
 export default function SettingsPage() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-  const [tab, setTab]       = useState('profile')
-  const [user, setUser]     = useState<any>(null)
-  const [name, setName]     = useState('')
-  const [email, setEmail]   = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved]   = useState(false)
+  const sb = useMemo(() => createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ), [])
   const router = useRouter()
 
+  const [tab, setTab]       = useState('org')
+  const [user, setUser]     = useState<any>(null)
+  const [org, setOrg]       = useState<Org|null>(null)
+  const [members, setMembers] = useState<Member[]>([])
+  const [rolePresets, setRolePresets] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving]   = useState(false)
+  const [saved, setSaved]     = useState(false)
+
+  // Create org form
+  const [creating, setCreating] = useState(false)
+  const [newOrg, setNewOrg] = useState({ name:'', name_ar:'', email:'', phone:'', city:'الرياض', industry:'فعاليات وترفيه', description:'' })
+  const setN = (k:string, v:string) => setNewOrg(f => ({...f,[k]:v}))
+
+  // Edit org form
+  const [editing, setEditing] = useState(false)
+  const [editOrg, setEditOrg] = useState<any>({})
+  const setE = (k:string, v:string) => setEditOrg((f:any) => ({...f,[k]:v}))
+
+  // Invite
+  const [inviteEmail, setInviteEmail]   = useState('')
+  const [inviteRole, setInviteRole]     = useState('editor')
+  const [inviting, setInviting]         = useState(false)
+  const [inviteSuccess, setInviteSuccess] = useState(false)
+
   useEffect(() => {
-    sb.auth.getUser().then(({ data }) => {
+    sb.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return
       setUser(data.user)
-      setName(data.user?.user_metadata?.full_name || '')
-      setEmail(data.user?.email || '')
+      // Load org where user is owner or member
+      const { data: memberOf } = await sb.from('org_members')
+        .select('org_id').eq('user_id', data.user.id).limit(1).single()
+      let orgId = memberOf?.org_id
+      if (!orgId) {
+        // Check if owner
+        const { data: owned } = await sb.from('organizations')
+          .select('id').eq('owner_id', data.user.id).limit(1).single()
+        orgId = owned?.id
+      }
+      if (orgId) {
+        const { data: o } = await sb.from('organizations').select('*').eq('id', orgId).single()
+        if (o) {
+          setOrg(o)
+          setEditOrg({ name:o.name||'', name_ar:o.name_ar||'', email:o.email||'', phone:o.phone||'', website:o.website||'', city:o.city||'', industry:o.industry||'', description:o.description||'' })
+          const [{ data: mems }, { data: presets }] = await Promise.all([
+            sb.from('org_members').select('*').eq('org_id', orgId).order('created_at'),
+            sb.from('role_presets').select('*').eq('org_id', orgId).order('created_at'),
+          ])
+          setMembers(mems||[])
+          setRolePresets(presets||[])
+        }
+      }
+      setLoading(false)
     })
   }, [])
 
-  async function saveProfile() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  async function createOrg() {
+    if (!newOrg.name.trim()) { alert('يرجى إدخال اسم المنظمة'); return }
     setSaving(true)
-    await sb.auth.updateUser({ data: { full_name: name } })
-    setSaving(false); setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    try {
+      const { data: o, error } = await sb.from('organizations').insert({
+        name:        newOrg.name.trim(),
+        name_ar:     newOrg.name_ar.trim()||null,
+        email:       newOrg.email||null,
+        phone:       newOrg.phone||null,
+        city:        newOrg.city||null,
+        industry:    newOrg.industry||null,
+        description: newOrg.description||null,
+        owner_id:    user.id,
+        status:      'active',
+        plan:        'free',
+        max_members: 5,
+      }).select().single()
+      if (error) throw error
+      // Add owner as member
+      await sb.from('org_members').insert({
+        org_id:    o.id,
+        user_id:   user.id,
+        email:     user.email,
+        full_name: user.user_metadata?.full_name||'',
+        role:      'owner',
+        status:    'active',
+      })
+      // Seed default role presets
+      await sb.from('role_presets').insert([
+        { org_id:o.id, name:'Admin', name_ar:'مدير', role_key:'admin', permissions:{events:'all',team:'manage',reports:true}, color:'#1E0A3C', is_system:true },
+        { org_id:o.id, name:'Editor', name_ar:'محرر', role_key:'editor', permissions:{events:'edit',team:'view',reports:false}, color:'#F05537', is_system:true },
+        { org_id:o.id, name:'Scanner', name_ar:'ماسح', role_key:'scanner', permissions:{events:'scan',team:'none',reports:false}, color:'#3A7D0A', is_system:true },
+      ])
+      setOrg(o); setCreating(false)
+      setEditOrg({ name:o.name||'', name_ar:o.name_ar||'', email:o.email||'', phone:o.phone||'', website:'', city:o.city||'', industry:o.industry||'', description:o.description||'' })
+      const { data: mems } = await sb.from('org_members').select('*').eq('org_id', o.id)
+      const { data: presets } = await sb.from('role_presets').select('*').eq('org_id', o.id)
+      setMembers(mems||[]); setRolePresets(presets||[])
+    } catch(e:any) { alert('خطأ: '+e.message) }
+    finally { setSaving(false) }
+  }
+
+  async function saveOrg() {
+    if (!org) return
+    setSaving(true)
+    const { error } = await sb.from('organizations').update({
+      name:        editOrg.name.trim(),
+      name_ar:     editOrg.name_ar.trim()||null,
+      email:       editOrg.email||null,
+      phone:       editOrg.phone||null,
+      website:     editOrg.website||null,
+      city:        editOrg.city||null,
+      industry:    editOrg.industry||null,
+      description: editOrg.description||null,
+      updated_at:  new Date().toISOString(),
+    }).eq('id', org.id)
+    if (!error) {
+      setOrg((o:any) => ({...o,...editOrg}))
+      setEditing(false); setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
+    setSaving(false)
+  }
+
+  async function inviteMember() {
+    if (!inviteEmail.trim()||!org) return
+    setInviting(true)
+    const token = crypto.randomUUID()
+    const { error } = await sb.from('org_members').insert({
+      org_id:      org.id,
+      email:       inviteEmail.trim().toLowerCase(),
+      role:        inviteRole,
+      status:      'invited',
+      invited_by:  user.id,
+      invite_token: token,
+      invite_expires_at: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+    })
+    if (!error) {
+      const { data: mems } = await sb.from('org_members').select('*').eq('org_id', org.id).order('created_at')
+      setMembers(mems||[])
+      setInviteEmail(''); setInviteSuccess(true)
+      setTimeout(() => setInviteSuccess(false), 3000)
+    }
+    setInviting(false)
+  }
+
+  async function removeMember(memberId: string) {
+    if (!confirm('هل تريد إزالة هذا العضو؟')) return
+    await sb.from('org_members').delete().eq('id', memberId)
+    setMembers(m => m.filter(x => x.id !== memberId))
+  }
+
+  async function changeMemberRole(memberId: string, newRole: string) {
+    await sb.from('org_members').update({ role:newRole }).eq('id', memberId)
+    setMembers(m => m.map(x => x.id===memberId ? {...x, role:newRole} : x))
   }
 
   async function signOut() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-    await sb.auth.signOut()
-    router.push('/login')
+    await sb.auth.signOut(); router.push('/login')
   }
 
-  const inp: React.CSSProperties = {
-    width:'100%', padding:'10px 14px', border:`1px solid ${C.border}`, borderRadius:8,
-    fontSize:14, outline:'none', fontFamily:'inherit', color:C.text, background:C.card, boxSizing:'border-box'
-  }
+  if (loading) return <div style={{padding:40,textAlign:'center',color:C.muted}}>جاري التحميل...</div>
+
+  // ── CREATE ORG SCREEN ─────────────────────────────────────────────
+  if (!org) return (
+    <div style={{minHeight:'100vh',background:C.bg,direction:'rtl'}}>
+      <div style={{background:C.card,borderBottom:`1px solid ${C.border}`,padding:'24px 32px'}}>
+        <h1 style={{fontSize:28,fontWeight:800,margin:0,color:C.navy}}>إعدادات المنظمة</h1>
+        <p style={{color:C.muted,fontSize:13,margin:'4px 0 0'}}>أنشئ منظمتك الأولى لبدء إدارة الفعاليات بشكل احترافي</p>
+      </div>
+      <div style={{maxWidth:560,margin:'40px auto',padding:'0 24px'}}>
+        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:16,padding:28}}>
+          <div style={{textAlign:'center',marginBottom:24}}>
+            <div style={{fontSize:48,marginBottom:8}}>🏢</div>
+            <h2 style={{fontSize:20,fontWeight:800,color:C.navy,margin:'0 0 6px'}}>أنشئ منظمتك</h2>
+            <p style={{color:C.muted,fontSize:13}}>ستتمكن من دعوة فريقك وإدارة الفعاليات معاً</p>
+          </div>
+          <div style={{display:'grid',gap:12}}>
+            <div>
+              <label style={lbl}>اسم المنظمة *</label>
+              <input value={newOrg.name} onChange={e=>setN('name',e.target.value)} placeholder="مثال: شركة الأحداث الكبرى" style={inp}/>
+            </div>
+            <div>
+              <label style={lbl}>الاسم بالعربية</label>
+              <input value={newOrg.name_ar} onChange={e=>setN('name_ar',e.target.value)} placeholder="الاسم بالعربية (اختياري)" style={inp}/>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              <div>
+                <label style={lbl}>البريد الإلكتروني</label>
+                <input type="email" value={newOrg.email} onChange={e=>setN('email',e.target.value)} placeholder="info@company.com" style={inp}/>
+              </div>
+              <div>
+                <label style={lbl}>رقم الجوال</label>
+                <input value={newOrg.phone} onChange={e=>setN('phone',e.target.value)} placeholder="05xxxxxxxx" style={inp}/>
+              </div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              <div>
+                <label style={lbl}>المدينة</label>
+                <select value={newOrg.city} onChange={e=>setN('city',e.target.value)} style={inp}>
+                  {CITIES.map(c=><option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={lbl}>القطاع</label>
+                <select value={newOrg.industry} onChange={e=>setN('industry',e.target.value)} style={inp}>
+                  {INDUSTRIES.map(i=><option key={i}>{i}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style={lbl}>نبذة عن المنظمة</label>
+              <textarea value={newOrg.description} onChange={e=>setN('description',e.target.value)} rows={3} placeholder="ماذا تفعل منظمتك؟" style={{...inp,resize:'vertical'}}/>
+            </div>
+          </div>
+          <button onClick={createOrg} disabled={saving||!newOrg.name.trim()} style={{
+            marginTop:20, width:'100%', padding:'13px', border:'none', borderRadius:8,
+            background: newOrg.name.trim() ? C.navy : '#DBDAE3',
+            color:'#fff', fontWeight:700, fontSize:15, cursor: newOrg.name.trim()?'pointer':'not-allowed', fontFamily:'inherit'
+          }}>
+            {saving ? '⏳ جاري الإنشاء...' : '🏢 إنشاء المنظمة'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  // ── MAIN SETTINGS ─────────────────────────────────────────────────
+  const ownerMember = members.find(m => m.role==='owner')
+  const isOwner = org.owner_id === user?.id
+  const activeMem = members.filter(m=>m.status==='active').length
+  const pendingMem = members.filter(m=>m.status==='invited').length
 
   return (
-    <div style={{ minHeight:'100vh', background:C.bg, direction:'rtl' }}>
-      <div style={{ background:C.card, borderBottom:`1px solid ${C.border}`, padding:'24px 32px 0' }}>
-        <h1 style={{ fontSize:40, fontWeight:800, margin:'0 0 20px', color:C.navy, letterSpacing:'-1px' }}>إعدادات المنظمة</h1>
-        <div style={{ display:'flex' }}>
+    <div style={{minHeight:'100vh',background:C.bg,direction:'rtl'}}>
+      {/* Header */}
+      <div style={{background:C.card,borderBottom:`1px solid ${C.border}`,padding:'24px 32px 0'}}>
+        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:16}}>
+          <div style={{width:46,height:46,background:'linear-gradient(135deg,#1E0A3C,#3D1A78)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:18}}>
+            {org.name?.[0]||'م'}
+          </div>
+          <div>
+            <h1 style={{fontSize:22,fontWeight:800,margin:0,color:C.navy}}>{org.name_ar||org.name}</h1>
+            <div style={{display:'flex',gap:10,marginTop:3}}>
+              <span style={{fontSize:11,color:C.muted}}>{org.city||'—'}</span>
+              <span style={{fontSize:11,color:C.muted}}>·</span>
+              <span style={{fontSize:11,color:C.muted}}>{org.industry||'—'}</span>
+              <span style={{fontSize:11,fontWeight:700,padding:'1px 8px',borderRadius:6,background:'#EDE9F7',color:'#5B3FA0'}}>{org.plan||'free'}</span>
+            </div>
+          </div>
+        </div>
+        <div style={{display:'flex',borderTop:`1px solid ${C.border}`}}>
           {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
-              padding:'10px 20px', background:'none', border:'none', cursor:'pointer', fontSize:14,
-              fontWeight:tab===t.id?700:400,
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{
+              padding:'10px 18px', background:'none', border:'none', cursor:'pointer',
+              fontSize:13, fontWeight:tab===t.id?700:400,
               color:tab===t.id?C.orange:C.muted,
               borderBottom:tab===t.id?`2px solid ${C.orange}`:'2px solid transparent',
-              transition:'all 0.15s', marginBottom:-1
-            }}>{t.label}</button>
+              marginBottom:-1, fontFamily:'inherit', display:'flex', alignItems:'center', gap:5
+            }}><span>{t.icon}</span>{t.label}</button>
           ))}
         </div>
       </div>
 
-      <div style={{ maxWidth:720, margin:'0 auto', padding:'28px 24px' }}>
+      <div style={{maxWidth:760,margin:'0 auto',padding:'24px'}}>
 
-        {/* Profile tab */}
-        {tab === 'profile' && (
+        {/* ── ORG TAB ───────────────────────────────────────────── */}
+        {tab==='org' && (
           <div>
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:24, marginBottom:16 }}>
-              <h2 style={{ fontSize:17, fontWeight:700, color:C.navy, margin:'0 0 4px' }}>ملف المنظِّم</h2>
-              <p style={{ fontSize:13, color:C.muted, margin:'0 0 20px' }}>معلومات تظهر للزوار على صفحات الفعاليات</p>
-              <div style={{ marginBottom:16 }}>
-                <label style={{ fontSize:12, fontWeight:600, color:C.text, display:'block', marginBottom:6 }}>الاسم الكامل</label>
-                <input value={name} onChange={e=>setName(e.target.value)} placeholder="اسم المنظم أو الشركة" style={inp} />
-              </div>
-              <div style={{ marginBottom:20 }}>
-                <label style={{ fontSize:12, fontWeight:600, color:C.text, display:'block', marginBottom:6 }}>البريد الإلكتروني</label>
-                <input value={email} disabled style={{ ...inp, background:'#F9F8F6', color:C.muted }} />
-                <p style={{ fontSize:11, color:C.muted, marginTop:4 }}>البريد الإلكتروني لا يمكن تغييره</p>
-              </div>
-              <button onClick={saveProfile} disabled={saving} style={{
-                padding:'10px 24px', border:'none', borderRadius:6,
-                background: saved ? '#3A7D0A' : C.orange,
-                color:'#fff', fontWeight:700, fontSize:14, cursor:'pointer', transition:'background 0.3s'
-              }}>
-                {saving ? 'جاري الحفظ...' : saved ? '✓ تم الحفظ' : 'حفظ التغييرات'}
-              </button>
+            {/* Stats row */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
+              {[
+                {icon:'📅',label:'الفعاليات',     value:'—',        note:'لا حد في الخطة الحالية'},
+                {icon:'👥',label:'أعضاء الفريق',  value:`${activeMem}/${org.max_members||5}`, note:`${pendingMem} دعوة معلقة`},
+                {icon:'📊',label:'الحالة',         value:org.status==='active'?'نشط':'—', note:org.plan||'free'},
+              ].map(s=>(
+                <div key={s.label} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:'14px 16px'}}>
+                  <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}>
+                    <span style={{fontSize:18}}>{s.icon}</span>
+                    <span style={{fontSize:20,fontWeight:800,color:C.navy}}>{s.value}</span>
+                  </div>
+                  <p style={{fontSize:12,fontWeight:600,color:C.text,margin:'0 0 2px'}}>{s.label}</p>
+                  <p style={{fontSize:11,color:C.muted,margin:0}}>{s.note}</p>
+                </div>
+              ))}
             </div>
 
-            {/* Account */}
-            <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:24 }}>
-              <h2 style={{ fontSize:17, fontWeight:700, color:C.navy, margin:'0 0 16px' }}>الحساب</h2>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 0', borderBottom:`1px solid ${C.border}` }}>
-                <div>
-                  <p style={{ fontWeight:600, fontSize:14, margin:0, color:C.text }}>تسجيل الخروج</p>
-                  <p style={{ fontSize:12, color:C.muted, margin:'2px 0 0' }}>تسجيل الخروج من الحساب الحالي</p>
-                </div>
-                <button onClick={signOut} style={{ padding:'8px 18px', border:`1px solid ${C.border}`, borderRadius:6, background:C.card, fontSize:13, fontWeight:600, cursor:'pointer', color:C.text }}>
-                  تسجيل خروج
+            {/* Edit form */}
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:22,marginBottom:14}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:0}}>بيانات المنظمة</h3>
+                <button onClick={()=>setEditing(!editing)} style={{padding:'6px 14px',border:`1px solid ${C.border}`,borderRadius:6,background:C.bg,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text}}>
+                  {editing?'إلغاء':'✏️ تعديل'}
                 </button>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Team tab */}
-        {tab === 'team' && (
-          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:24 }}>
-            <h2 style={{ fontSize:17, fontWeight:700, color:C.navy, margin:'0 0 4px' }}>إدارة الفريق</h2>
-            <p style={{ fontSize:13, color:C.muted, margin:'0 0 20px' }}>قريباً — ستتمكن من دعوة أعضاء وتحديد صلاحياتهم</p>
-            <div style={{ textAlign:'center', padding:'40px 0' }}>
-              <div style={{ fontSize:48, marginBottom:12 }}>👥</div>
-              <p style={{ fontWeight:600, color:C.navy, margin:'0 0 8px' }}>ميزة قيد التطوير</p>
-              <p style={{ color:C.muted, fontSize:13 }}>ستتاح في النسخة القادمة</p>
-            </div>
-          </div>
-        )}
-
-        {/* Plan tab */}
-        {tab === 'plan' && (
-          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:24 }}>
-            <h2 style={{ fontSize:17, fontWeight:700, color:C.navy, margin:'0 0 16px' }}>باقتك الحالية</h2>
-            <div style={{ background:'#F8F7FA', borderRadius:10, padding:16, marginBottom:20 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div>
-                  <p style={{ fontWeight:700, fontSize:18, color:C.navy, margin:0 }}>🆓 مجاني</p>
-                  <p style={{ fontSize:13, color:C.muted, margin:'4px 0 0' }}>3 فعاليات · 500 زائر · ماسح QR</p>
+              {editing ? (
+                <div style={{display:'grid',gap:12}}>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                    <div>
+                      <label style={lbl}>الاسم *</label>
+                      <input value={editOrg.name} onChange={e=>setE('name',e.target.value)} style={inp}/>
+                    </div>
+                    <div>
+                      <label style={lbl}>الاسم بالعربية</label>
+                      <input value={editOrg.name_ar} onChange={e=>setE('name_ar',e.target.value)} style={inp}/>
+                    </div>
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                    <div>
+                      <label style={lbl}>البريد</label>
+                      <input type="email" value={editOrg.email} onChange={e=>setE('email',e.target.value)} style={inp}/>
+                    </div>
+                    <div>
+                      <label style={lbl}>الجوال</label>
+                      <input value={editOrg.phone} onChange={e=>setE('phone',e.target.value)} style={inp}/>
+                    </div>
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+                    <div>
+                      <label style={lbl}>المدينة</label>
+                      <select value={editOrg.city} onChange={e=>setE('city',e.target.value)} style={inp}>
+                        {CITIES.map(c=><option key={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={lbl}>القطاع</label>
+                      <select value={editOrg.industry} onChange={e=>setE('industry',e.target.value)} style={inp}>
+                        {INDUSTRIES.map(i=><option key={i}>{i}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={lbl}>الموقع</label>
+                      <input value={editOrg.website} onChange={e=>setE('website',e.target.value)} placeholder="https://..." style={inp}/>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={lbl}>نبذة</label>
+                    <textarea value={editOrg.description} onChange={e=>setE('description',e.target.value)} rows={2} style={{...inp,resize:'vertical'}}/>
+                  </div>
+                  <button onClick={saveOrg} disabled={saving} style={{padding:'10px',background:saved?C.green:C.orange,border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+                    {saving?'جاري الحفظ...':saved?'✓ تم الحفظ':'💾 حفظ التغييرات'}
+                  </button>
                 </div>
-                <span style={{ padding:'4px 12px', borderRadius:6, background:'#F3F4F6', fontSize:12, fontWeight:600, color:C.muted }}>الباقة الحالية</span>
+              ) : (
+                <div style={{display:'grid',gap:8}}>
+                  {[
+                    ['🏢 الاسم',       org.name_ar||org.name],
+                    ['📧 البريد',      org.email||'—'],
+                    ['📞 الجوال',      org.phone||'—'],
+                    ['📍 المدينة',     org.city||'—'],
+                    ['🏭 القطاع',      org.industry||'—'],
+                    ['🌐 الموقع',      org.website||'—'],
+                  ].map(([l,v]) => (
+                    <div key={l} style={{display:'grid',gridTemplateColumns:'130px 1fr',padding:'8px 0',borderBottom:`1px solid ${C.border}`}}>
+                      <span style={{fontSize:12,color:C.muted,fontWeight:600}}>{l}</span>
+                      <span style={{fontSize:13,color:C.text,fontWeight:600}}>{v}</span>
+                    </div>
+                  ))}
+                  {org.description && (
+                    <p style={{fontSize:13,color:C.text,lineHeight:1.6,margin:'6px 0 0',background:'#F8F7FA',padding:12,borderRadius:8}}>{org.description}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Danger zone */}
+            {isOwner && (
+              <div style={{background:C.card,border:`1px solid #F5C0B0`,borderRadius:12,padding:20}}>
+                <h3 style={{fontSize:14,fontWeight:700,color:'#B91C1C',margin:'0 0 8px'}}>⚠️ منطقة الخطر</h3>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div>
+                    <p style={{fontWeight:600,color:C.text,margin:0,fontSize:13}}>تسجيل الخروج</p>
+                    <p style={{fontSize:11,color:C.muted,margin:'2px 0 0'}}>الخروج من الحساب</p>
+                  </div>
+                  <button onClick={signOut} style={{padding:'7px 16px',border:`1px solid ${C.border}`,borderRadius:6,background:C.card,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text}}>
+                    تسجيل خروج
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TEAM TAB ──────────────────────────────────────────── */}
+        {tab==='team' && (
+          <div>
+            {/* Invite form */}
+            {isOwner && (
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:20,marginBottom:14}}>
+                <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:'0 0 14px'}}>➕ دعوة عضو جديد</h3>
+                <div style={{display:'grid',gridTemplateColumns:'1fr auto auto',gap:10,alignItems:'flex-end'}}>
+                  <div>
+                    <label style={lbl}>البريد الإلكتروني</label>
+                    <input value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&inviteMember()} type="email" placeholder="colleague@company.com" style={inp}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>الدور</label>
+                    <select value={inviteRole} onChange={e=>setInviteRole(e.target.value)} style={{...inp,width:'auto',minWidth:110}}>
+                      {Object.entries(ROLES).filter(([k])=>k!=='owner').map(([k,v])=>(
+                        <option key={k} value={k}>{v.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button onClick={inviteMember} disabled={inviting||!inviteEmail.trim()} style={{padding:'10px 18px',background:inviteSuccess?C.green:C.navy,border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',height:42}}>
+                    {inviting?'⏳...':inviteSuccess?'✓ تمت الدعوة':'إرسال الدعوة'}
+                  </button>
+                </div>
+                <p style={{fontSize:11,color:C.muted,margin:'8px 0 0'}}>
+                  سيتلقى العضو رابط دعوة صالح لمدة 7 أيام — الحد الأقصى {org.max_members||5} أعضاء
+                </p>
+              </div>
+            )}
+
+            {/* Members list */}
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,overflow:'hidden'}}>
+              <div style={{padding:'14px 18px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:0}}>أعضاء الفريق ({members.length})</h3>
+                <div style={{display:'flex',gap:8}}>
+                  <span style={{fontSize:11,background:'#EAF7E0',color:C.green,padding:'3px 8px',borderRadius:6,fontWeight:600}}>{activeMem} نشط</span>
+                  {pendingMem>0&&<span style={{fontSize:11,background:'#FFF8E8',color:'#B07000',padding:'3px 8px',borderRadius:6,fontWeight:600}}>{pendingMem} معلّق</span>}
+                </div>
+              </div>
+              {members.length===0 ? (
+                <div style={{padding:40,textAlign:'center'}}>
+                  <div style={{fontSize:40,marginBottom:8}}>👥</div>
+                  <p style={{color:C.muted,fontSize:13}}>لا يوجد أعضاء بعد — ادعُ زميلك أعلاه</p>
+                </div>
+              ) : members.map((m,i) => {
+                const r = ROLES[m.role||'viewer'] || ROLES.viewer
+                const isMe = m.role==='owner'
+                return (
+                  <div key={m.id} style={{padding:'14px 18px',borderBottom:i<members.length-1?`1px solid ${C.border}`:'none',display:'flex',alignItems:'center',gap:12}}>
+                    <div style={{width:40,height:40,background:'linear-gradient(135deg,#B4A7D6,#7B4FBF)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:16,flexShrink:0}}>
+                      {m.full_name?.[0]||m.email[0].toUpperCase()}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <p style={{fontWeight:700,color:C.navy,margin:0,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.full_name||m.email}</p>
+                        <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:6,background:r.bg,color:r.color,flexShrink:0}}>{r.label}</span>
+                        {m.status==='invited'&&<span style={{fontSize:10,fontWeight:600,padding:'2px 7px',borderRadius:6,background:'#FFF8E8',color:'#B07000',flexShrink:0}}>دعوة معلقة</span>}
+                      </div>
+                      <p style={{fontSize:11,color:C.muted,margin:'2px 0 0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.email}</p>
+                    </div>
+                    {isOwner && !isMe && (
+                      <div style={{display:'flex',gap:6,flexShrink:0}}>
+                        <select value={m.role||'viewer'} onChange={e=>changeMemberRole(m.id,e.target.value)} style={{fontSize:11,padding:'4px 8px',border:`1px solid ${C.border}`,borderRadius:6,fontFamily:'inherit',color:C.text,background:C.bg,outline:'none',cursor:'pointer'}}>
+                          {Object.entries(ROLES).filter(([k])=>k!=='owner').map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                        <button onClick={()=>removeMember(m.id)} style={{padding:'4px 10px',background:'#FEF2F2',border:'none',borderRadius:6,color:'#DC2626',fontWeight:700,fontSize:11,cursor:'pointer',fontFamily:'inherit'}}>إزالة</button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── ROLES TAB ─────────────────────────────────────────── */}
+        {tab==='roles' && (
+          <div>
+            <div style={{background:'#FFF8E8',border:'1px solid #F5C842',borderRadius:8,padding:'10px 14px',marginBottom:14,display:'flex',gap:8,alignItems:'center'}}>
+              <span style={{fontSize:16}}>💡</span>
+              <p style={{margin:0,fontSize:12,color:'#7A5000'}}>الأدوار تحدد ما يستطيع كل عضو رؤيته أو تعديله داخل المنظمة</p>
+            </div>
+            {Object.entries(ROLES).map(([key, role]) => (
+              <div key={key} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:16,marginBottom:10,display:'flex',gap:14,alignItems:'flex-start'}}>
+                <div style={{width:40,height:40,background:role.bg,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0}}>
+                  {key==='owner'?'👑':key==='admin'?'⚙️':key==='editor'?'✏️':key==='scanner'?'📷':'👁️'}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                    <h4 style={{margin:0,fontSize:14,fontWeight:700,color:C.navy}}>{role.label}</h4>
+                    <span style={{fontSize:10,fontWeight:600,padding:'2px 8px',borderRadius:6,background:role.bg,color:role.color}}>{key}</span>
+                    {(key==='owner'||key==='admin'||key==='editor'||key==='scanner') && (
+                      <span style={{fontSize:10,color:C.muted,background:'#F1F1F1',padding:'1px 6px',borderRadius:4}}>نظام</span>
+                    )}
+                  </div>
+                  <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                    {role.perms.map(p=>(
+                      <span key={p} style={{fontSize:11,background:'#F8F7FA',color:C.text,padding:'3px 9px',borderRadius:6,border:`1px solid ${C.border}`}}>{p}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{fontSize:13,color:C.muted,flexShrink:0,fontWeight:600}}>
+                  {members.filter(m=>m.role===key).length} عضو
+                </div>
+              </div>
+            ))}
+            {rolePresets.filter(p=>!p.is_system).length>0 && (
+              <div style={{marginTop:16}}>
+                <h3 style={{fontSize:14,fontWeight:700,color:C.navy,margin:'0 0 10px'}}>أدوار مخصصة</h3>
+                {rolePresets.filter(p=>!p.is_system).map(p=>(
+                  <div key={p.id} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:14,marginBottom:8,display:'flex',alignItems:'center',gap:10}}>
+                    <div style={{width:12,height:12,borderRadius:'50%',background:p.color||C.muted,flexShrink:0}}/>
+                    <div style={{flex:1}}>
+                      <p style={{fontWeight:700,color:C.navy,margin:0,fontSize:13}}>{p.name_ar||p.name}</p>
+                      <p style={{fontSize:11,color:C.muted,margin:'2px 0 0'}}>{p.role_key}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── PLAN TAB ──────────────────────────────────────────── */}
+        {tab==='plan' && (
+          <div>
+            <div style={{background:C.card,border:`2px solid ${C.navy}`,borderRadius:12,padding:20,marginBottom:14}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:14}}>
+                <div>
+                  <p style={{fontSize:12,color:C.muted,margin:0}}>الباقة الحالية</p>
+                  <h3 style={{fontSize:22,fontWeight:800,color:C.navy,margin:'4px 0 0',textTransform:'capitalize'}}>{org.plan||'free'}</h3>
+                </div>
+                <span style={{background:'#EAF7E0',color:C.green,fontSize:11,fontWeight:700,padding:'4px 10px',borderRadius:6}}>نشطة</span>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+                {[
+                  ['📅','الفعاليات',      String(org.max_events||'غير محدود')],
+                  ['👥','الأعضاء',       String(org.max_members||5)],
+                  ['🎟','الزوار/فعالية', String(org.max_attendees_per_event||500)],
+                ].map(([i,l,v]) => (
+                  <div key={l} style={{background:'#F8F7FA',borderRadius:8,padding:'10px 12px',textAlign:'center'}}>
+                    <p style={{fontSize:14,margin:'0 0 2px'}}>{i}</p>
+                    <p style={{fontSize:16,fontWeight:800,color:C.navy,margin:'0 0 2px'}}>{v}</p>
+                    <p style={{fontSize:10,color:C.muted,margin:0}}>{l}</p>
+                  </div>
+                ))}
               </div>
             </div>
-            <p style={{ fontWeight:600, color:C.navy, margin:'0 0 12px' }}>ترقية الباقة</p>
+
+            <p style={{fontWeight:700,color:C.navy,margin:'0 0 12px',fontSize:14}}>ترقية الباقة</p>
             {[
-              { name:'ستارتر', price:'99 ريال/شهر', color:'#0F6E56', features:'10 فعاليات · 5 أعضاء · تصدير Excel' },
-              { name:'برو', price:'299 ريال/شهر', color:C.orange, features:'50 فعالية · 20 عضو · كوادر + علامة تجارية' },
-            ].map(plan => (
-              <div key={plan.name} style={{ border:`1px solid ${C.border}`, borderRadius:10, padding:16, marginBottom:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              { key:'gold', name:'ذهبي', price:'149 ريال/شهر', color:'#B07000', bg:'#FFFBEB', events:'5', members:'3', note:'للمنظمات الصغيرة والمتوسطة' },
+              { key:'platinum', name:'بلاتيني', price:'399 ريال/شهر', color:'#5B3FA0', bg:'#F5F0FF', events:'20', members:'10', note:'للمنظمات الكبرى' },
+              { key:'enterprise', name:'مؤسسي', price:'تواصل معنا', color:C.navy, bg:'#E8E4F0', events:'∞', members:'∞', note:'حل مخصص بالكامل' },
+            ].map(plan=>(
+              <div key={plan.key} style={{background:plan.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:16,marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <div>
-                  <p style={{ fontWeight:700, color:plan.color, margin:0, fontSize:15 }}>{plan.name}</p>
-                  <p style={{ fontSize:12, color:C.muted, margin:'4px 0 0' }}>{plan.features}</p>
+                  <p style={{fontWeight:800,color:plan.color,margin:'0 0 3px',fontSize:16}}>{plan.name}</p>
+                  <p style={{fontSize:12,color:C.muted,margin:0}}>{plan.events} فعالية · {plan.members} عضو · {plan.note}</p>
                 </div>
-                <div style={{ textAlign:'left' }}>
-                  <p style={{ fontWeight:700, color:C.navy, margin:'0 0 6px', fontSize:15 }}>{plan.price}</p>
-                  <button style={{ padding:'7px 16px', border:'none', borderRadius:6, background:plan.color, color:'#fff', fontWeight:700, fontSize:12, cursor:'pointer' }}>
-                    ترقية
+                <div style={{textAlign:'left'}}>
+                  <p style={{fontWeight:700,color:C.navy,margin:'0 0 6px',fontSize:14}}>{plan.price}</p>
+                  <button style={{padding:'7px 16px',border:'none',borderRadius:6,background:plan.color,color:'#fff',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit'}}>
+                    {plan.key==='enterprise'?'تواصل':'ترقية'}
                   </button>
                 </div>
               </div>
             ))}
           </div>
         )}
+
       </div>
     </div>
   )
