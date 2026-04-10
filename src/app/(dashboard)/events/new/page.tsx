@@ -1,10 +1,9 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -41,6 +40,7 @@ type Ticket = { id:number; name:string; type:'free'|'paid'; price:string; qty:st
 type AgendaItem  = { time:string; title:string; speaker:string }
 type LineupMember = { name:string; role:string; bio:string }
 
+// ── EventPreview: NO Supabase client here ──
 function EventPreview({ title, subtitle, category, subcategory, startDate, startTime, endDate, endTime,
   locationType, location, eventUrl, description, highlights, ageInfo, doorTime,
   parking, tickets, coverPreview, mode }: {
@@ -50,7 +50,6 @@ function EventPreview({ title, subtitle, category, subcategory, startDate, start
   ageInfo:string; doorTime:string; parking:string; tickets:Ticket[]
   coverPreview:string|null; mode:'mobile'|'desktop'
 }) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const isMobile = mode === 'mobile'
   const locStr = locationType==='online' ? 'عبر الإنترنت' : locationType==='tba' ? 'يُعلَن لاحقاً' : location||'مكان الفعالية'
   const dateStr = startDate ? new Date(`${startDate}T${startTime}`).toLocaleDateString('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'}) : null
@@ -147,7 +146,12 @@ function EventPreview({ title, subtitle, category, subcategory, startDate, start
 }
 
 export default function NewEventPage() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  // ✅ FIX 1: Single Supabase client via useMemo — never recreated on re-render
+  const sb = useMemo(() => createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ), [])
+
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -191,8 +195,8 @@ export default function NewEventPage() {
   const [visibility, setVisibility] = useState<'public'|'private'>('public')
   const [status, setStatus]         = useState<'draft'|'published'>('draft')
 
+  // ✅ FIX 2: Use shared sb instance — no new client inside functions
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
     reader.onload = ev => setCoverPreview(ev.target?.result as string)
@@ -210,77 +214,98 @@ export default function NewEventPage() {
     } finally { setImageUploading(false) }
   }
 
+  // ✅ FIX 2: Removed createBrowserClient from all helper functions
   function addTicket() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setTickets(t=>[...t,{id:Date.now(),name:'',type:'free',price:'',qty:'',desc:'',saleStart:'',saleEnd:''}]) }
   function removeTicket(id:number) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setTickets(t=>t.filter(tk=>tk.id!==id)) }
   function updateTicket(id:number, f:keyof Ticket, v:string) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setTickets(t=>t.map(tk=>tk.id===id?{...tk,[f]:v}:tk)) }
 
-  function addFaq() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-    setFaqs(f=>[...f,{q:'',a:''}]) }
-  function removeFaq(i:number) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-    setFaqs(f=>f.filter((_,idx)=>idx!==i)) }
+  function addFaq() { setFaqs(f=>[...f,{q:'',a:''}]) }
+  function removeFaq(i:number) { setFaqs(f=>f.filter((_,idx)=>idx!==i)) }
   function updateFaq(i:number, f:'q'|'a', v:string) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setFaqs(fs=>fs.map((faq,idx)=>idx===i?{...faq,[f]:v}:faq)) }
 
-  function addAgenda() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-    setAgenda(a=>[...a,{time:'',title:'',speaker:''}]) }
-  function removeAgenda(i:number) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-    setAgenda(a=>a.filter((_,idx)=>idx!==i)) }
+  function addAgenda() { setAgenda(a=>[...a,{time:'',title:'',speaker:''}]) }
+  function removeAgenda(i:number) { setAgenda(a=>a.filter((_,idx)=>idx!==i)) }
   function updateAgenda(i:number, f:keyof AgendaItem, v:string) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setAgenda(a=>a.map((it,idx)=>idx===i?{...it,[f]:v}:it)) }
 
-  function addLineup() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-    setLineup(l=>[...l,{name:'',role:'',bio:''}]) }
-  function removeLineup(i:number) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-    setLineup(l=>l.filter((_,idx)=>idx!==i)) }
+  function addLineup() { setLineup(l=>[...l,{name:'',role:'',bio:''}]) }
+  function removeLineup(i:number) { setLineup(l=>l.filter((_,idx)=>idx!==i)) }
   function updateLineup(i:number, f:keyof LineupMember, v:string) {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     setLineup(l=>l.map((it,idx)=>idx===i?{...it,[f]:v}:it)) }
 
   async function publish() {
-  const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     if (!title.trim()) { alert('يرجى إدخال اسم الفعالية'); setStep(1); return }
-    if (!startDate) { alert('يرجى تحديد تاريخ البداية'); setStep(1); return }
+    if (!startDate)    { alert('يرجى تحديد تاريخ البداية'); setStep(1); return }
     setSaving(true)
     try {
-      const {data:{user}} = await sb.auth.getUser()
-      const {data,error} = await sb.from('events').insert({
-        title: title.trim(),
-        description: [subtitle,description].filter(Boolean).join('\n\n'),
-        location: locationType==='online'?'عبر الإنترنت':locationType==='tba'?'يُعلَن لاحقاً':[location,locationDetails].filter(Boolean).join(' — '),
-        event_url: eventUrl||null,
-        cover_image: coverUrl||null,
-        category, subcategory,
-        start_date: `${startDate}T${startTime}:00`,
-        end_date: endDate?`${endDate}T${endTime}:00`:null,
-        capacity: capacity?parseInt(capacity):null,
-        is_recurring: isRecurring,
-        recurrence: isRecurring?{type:recurrence}:null,
-        ticket_sale_start: tickets[0]?.saleStart||null,
-        ticket_sale_end:   tickets[0]?.saleEnd||null,
-        agenda:  agenda.length?agenda:null,
-        lineup:  lineup.length?lineup:null,
-        status, is_public: visibility==='public',
-        created_by: user?.id,
-      }).select('id').single()
-      if (error) throw error
+      const { data: { user } } = await sb.auth.getUser()
+
+      // ✅ FIX 3: Use .select('id') without .single() to avoid RLS hang
+      //           Map tickets array to DB column format
+      const ticketsForDb = tickets.map(t => ({
+        name: t.name || 'تذكرة عامة',
+        type: t.type,
+        price: t.type === 'paid' ? parseFloat(t.price) || 0 : 0,
+        qty:  t.qty ? parseInt(t.qty) : null,
+        desc: t.desc || null,
+        sale_start: t.saleStart || null,
+        sale_end:   t.saleEnd   || null,
+      }))
+
+      const locationStr =
+        locationType === 'online' ? 'عبر الإنترنت' :
+        locationType === 'tba'    ? 'يُعلَن لاحقاً' :
+        [location, locationDetails].filter(Boolean).join(' — ')
+
+      const { data, error } = await sb.from('events').insert({
+        title:            title.trim(),
+        description:      [subtitle, description].filter(Boolean).join('\n\n') || null,
+        location:         locationStr,
+        location_type:    locationType,
+        event_url:        eventUrl || null,
+        cover_image:      coverUrl || null,
+        category:         category || null,
+        subcategory:      subcategory || null,
+        start_date:       `${startDate}T${startTime}:00`,
+        end_date:         endDate ? `${endDate}T${endTime}:00` : null,
+        capacity:         capacity ? parseInt(capacity) : null,
+        is_recurring:     isRecurring,
+        recurrence:       isRecurring ? { type: recurrence } : null,
+        ticket_sale_start: tickets[0]?.saleStart || null,
+        ticket_sale_end:   tickets[0]?.saleEnd   || null,
+        agenda:           agenda.length  ? agenda  : null,
+        lineup:           lineup.length  ? lineup  : null,
+        tickets:          ticketsForDb,
+        door_time:        doorTime    || null,
+        age_restriction:  ageInfo     || null,
+        parking_info:     parking     || null,
+        highlights:       highlights  || null,
+        status,
+        is_public:        visibility === 'public',
+        created_by:       user?.id ?? null,
+      }).select('id')           // ✅ no .single() — returns array
+
+      if (error) {
+        console.error('Supabase insert error:', error)
+        throw error
+      }
+
+      const newId = data?.[0]?.id
+      if (!newId) throw new Error('لم يُعاد ID الفعالية')
+
       setSaved(true)
-      setTimeout(()=>router.push(`/events/${data.id}`),700)
-    } catch(e:any){ alert('خطأ: '+e.message) }
-    finally { setSaving(false) }
+      setTimeout(() => { window.location.href = `/events/${newId}` }, 700)
+
+    } catch (e: any) {
+      console.error('publish error:', e)
+      alert('خطأ في الحفظ: ' + (e?.message || 'خطأ غير معروف'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   const inp: React.CSSProperties = {
@@ -402,7 +427,7 @@ export default function NewEventPage() {
                 </div>
               </div>
 
-              {/* Date & Time + Recurring */}
+              {/* Date & Time */}
               <div style={card}>
                 <p style={{fontSize:15,fontWeight:700,color:C.navy,margin:'0 0 14px'}}>التاريخ والوقت</p>
                 <div style={{display:'flex',gap:8,marginBottom:14}}>
@@ -741,7 +766,7 @@ export default function NewEventPage() {
         {step<3
           ? <button onClick={()=>setStep(s=>Math.min(3,s+1))} style={{padding:'9px 24px',border:'none',borderRadius:6,background:C.orange,color:'#fff',cursor:'pointer',fontWeight:700,fontSize:13}}>التالي ←</button>
           : <button onClick={publish} disabled={saving||imageUploading} style={{padding:'9px 24px',border:'none',borderRadius:6,background:saved?C.green:C.orange,color:'#fff',cursor:saving?'wait':'pointer',fontWeight:700,fontSize:13,transition:'background 0.3s'}}>
-              {imageUploading?'⏫ رفع الصورة...':saving?'جاري الحفظ...':saved?'✓ تم!':status==='published'?'🚀 نشر الفعالية':'💾 حفظ كمسودة'}
+              {imageUploading?'⏫ رفع الصورة...':saving?'⏳ جاري الحفظ...':saved?'✓ تم!':status==='published'?'🚀 نشر الفعالية':'💾 حفظ كمسودة'}
             </button>
         }
       </div>
