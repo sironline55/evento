@@ -123,7 +123,7 @@ export default function ContractsPage() {
         <div style={{ textAlign:'center', padding:60, background:C.card, borderRadius:14, border:`2px dashed ${C.border}` }}>
           <div style={{ fontSize:40, marginBottom:8 }}>📭</div>
           <p style={{ color:C.muted }}>لا توجد عقود في هذه الفئة</p>
-          <a href="/dashboard/briefs/new" style={{ display:'inline-block', marginTop:12, padding:'10px 24px', background:C.orange, borderRadius:10, color:'#fff', fontWeight:700, textDecoration:'none' }}>+ نشر بريف جديد</a>
+          <a href="/briefs/new" style={{ display:'inline-block', marginTop:12, padding:'10px 24px', background:C.orange, borderRadius:10, color:'#fff', fontWeight:700, textDecoration:'none' }}>+ نشر بريف جديد</a>
         </div>
       ) : (
         <div style={{ display:'grid', gap:14 }}>
@@ -205,7 +205,7 @@ export default function ContractsPage() {
                   {contract.status === 'disputed' && (
                     <span style={{ fontSize:13, color:C.red, fontWeight:700 }}>⚠️ قيد حل النزاع — سيتواصل معك الفريق</span>
                   )}
-                  <a href={`/dashboard/briefs/${contract.brief_id}`} style={{ padding:'9px 14px', border:`1px solid ${C.border}`, borderRadius:8, color:C.text, fontSize:13, fontWeight:600, textDecoration:'none' }}>
+                  <a href={`/briefs/${contract.brief_id}`} style={{ padding:'9px 14px', border:`1px solid ${C.border}`, borderRadius:8, color:C.text, fontSize:13, fontWeight:600, textDecoration:'none' }}>
                     عرض البريف
                   </a>
                   <a href={`/influencers/${contract.influencer_id}`} target="_blank" style={{ padding:'9px 14px', border:`1px solid ${C.border}`, borderRadius:8, color:C.text, fontSize:13, fontWeight:600, textDecoration:'none' }}>
