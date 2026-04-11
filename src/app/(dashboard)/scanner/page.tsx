@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo, Suspense } from 'rea
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -168,6 +169,7 @@ function ScannerInner() {
 
   return (
     <div style={{ minHeight:'100vh', background:C.bg, direction:'rtl' }}>
+      <MobilePageHeader title="ماسح QR" />
       {/* Header */}
       <div style={{ background:C.card, borderBottom:`1px solid ${C.border}`, padding:'16px 20px' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
