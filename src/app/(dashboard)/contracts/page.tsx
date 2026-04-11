@@ -1,4 +1,5 @@
 'use client'
+import RatingForm from '@/components/influencer/RatingForm'
 async function triggerWhatsApp(type: string, userId: string, phone: string, data: any, refId?: string) {
   try { await fetch('/api/whatsapp/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({type,userId,phone,data,referenceId:refId}) }) } catch {}
 }
@@ -28,6 +29,7 @@ export default function ContractsPage() {
   const [contracts, setContracts] = useState<any[]>([])
   const [briefs, setBriefs] = useState<Record<string,any>>({})
   const [influencers, setInfluencers] = useState<Record<string,any>>({})
+  const [ratingOpen, setRatingOpen] = useState<string|null>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('active')
   const [approving, setApproving] = useState<string|null>(null)
@@ -206,6 +208,29 @@ export default function ContractsPage() {
                     </a>
                 )}
                 <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                  {contract.status === 'active' && (
+                    <a href={`/influencer/deliver/${contract.id}`}
+                      style={{ padding:'6px 14px', background:'#E6F1FB', color:'#185FA5', border:'1px solid #93C5FD', borderRadius:8, fontSize:12, fontWeight:700, textDecoration:'none', cursor:'pointer' }}>
+                      📤 تسليم المحتوى
+                    </a>
+                  )}
+                  {contract.status === 'completed' && (
+                    <button onClick={() => setRatingOpen(ratingOpen===contract.id?null:contract.id)}
+                      style={{ padding:'6px 14px', background:'#FFF8E8', color:'#854F0B', border:'1px solid #F5D56B', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                      ⭐ قيّم المؤثر
+                    </button>
+                  )}
+                  {ratingOpen === contract.id && (
+                    <div style={{ marginTop:8 }}>
+                      <RatingForm
+                        contractId={contract.id}
+                        influencerId={contract.influencer_id}
+                        orgId={contract.org_id}
+                        influencerName={(contract.influencer_profiles as any)?.display_name || 'المؤثر'}
+                        onDone={() => setRatingOpen(null)}
+                      />
+                    </div>
+                  )}
                   {contract.status === 'content_submitted' && (
                     <>
                       <button onClick={() => approveContract(contract)} disabled={approving===contract.id} style={{ padding:'9px 18px', background:C.green, border:'none', borderRadius:8, color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
