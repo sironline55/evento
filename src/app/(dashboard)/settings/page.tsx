@@ -29,10 +29,11 @@ type Org    = { id:string; name:string; name_ar:string|null; email:string|null; 
 type Member = { id:string; email:string; full_name:string|null; role:string|null; status:string|null; invited_by:string|null; created_at:string; last_active_at:string|null }
 
 const TABS = [
-  { id:'org',    icon:'🏢', label:'المنظمة' },
-  { id:'team',   icon:'👥', label:'الفريق' },
-  { id:'roles',  icon:'🎭', label:'الأدوار' },
-  { id:'plan',   icon:'💳', label:'الباقة' },
+  { id:'org',     icon:'🏢', label:'المنظمة' },
+  { id:'catalog', icon:'🌐', label:'الكتالوج' },
+  { id:'team',    icon:'👥', label:'الفريق' },
+  { id:'roles',   icon:'🎭', label:'الأدوار' },
+  { id:'plan',    icon:'💳', label:'الباقة' },
 ]
 
 export default function SettingsPage() {
@@ -541,6 +542,123 @@ export default function SettingsPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+
+        {/* ── CATALOG TAB ────────────────────────────────────────── */}
+        {tab==='catalog' && (
+          <div>
+            {/* Enable toggle */}
+            <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:20,marginBottom:14}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
+                <div>
+                  <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:'0 0 4px'}}>🌐 الكتالوج العام</h3>
+                  <p style={{fontSize:12,color:C.muted,margin:0}}>صفحة عامة تعرض فعالياتك للجمهور بدون لوحة تحكم</p>
+                </div>
+                <div onClick={async()=>{
+                  if(!org)return
+                  const nv=!org.catalog_enabled
+                  await sb.from('organizations').update({catalog_enabled:nv}).eq('id',org.id)
+                  setOrg((o:any)=>({...o,catalog_enabled:nv}))
+                }} style={{
+                  width:48,height:26,borderRadius:50,cursor:'pointer',position:'relative',
+                  background:org?.catalog_enabled?C.orange:'#DBDAE3',transition:'background 0.2s',flexShrink:0
+                }}>
+                  <div style={{position:'absolute',top:3,width:20,height:20,borderRadius:'50%',background:'#fff',
+                    transition:'right 0.2s, left 0.2s',
+                    right:org?.catalog_enabled?3:'auto',left:org?.catalog_enabled?'auto':3,
+                    boxShadow:'0 1px 4px rgba(0,0,0,0.2)'}}/>
+                </div>
+              </div>
+
+              {org?.catalog_enabled && org?.slug && (
+                <div style={{background:'#EAF7E0',borderRadius:8,padding:'10px 14px',border:'1px solid #C3E6C3',marginBottom:12}}>
+                  <p style={{fontSize:11,color:'#1A5A00',fontWeight:600,margin:'0 0 4px'}}>🔗 رابط الكتالوج الخاص بك</p>
+                  <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <code style={{fontSize:12,color:C.navy,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'monospace'}}>
+                      {typeof window!=='undefined'?window.location.origin:''}/org/{org.slug}
+                    </code>
+                    <button onClick={()=>navigator.clipboard?.writeText((typeof window!=='undefined'?window.location.origin:'')+'/org/'+org.slug)} style={{padding:'4px 10px',background:C.green,border:'none',borderRadius:6,color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>نسخ</button>
+                    <a href={`/org/${org.slug}`} target="_blank" style={{padding:'4px 10px',background:C.navy,borderRadius:6,color:'#fff',fontSize:11,fontWeight:700,textDecoration:'none',flexShrink:0}}>فتح</a>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Catalog settings */}
+            {org && (
+              <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:20,marginBottom:14}}>
+                <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:'0 0 14px'}}>إعدادات الصفحة العامة</h3>
+                <div style={{display:'grid',gap:12}}>
+                  <div>
+                    <label style={lbl}>الـ Slug (الرابط المختصر) *</label>
+                    <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                      <span style={{fontSize:12,color:C.muted,whiteSpace:'nowrap'}}>evento.app/org/</span>
+                      <input value={editOrg.slug||org.slug||''} onChange={e=>setE('slug',e.target.value.toLowerCase().replace(/[^a-z0-9\-]/g,''))} placeholder="your-slug" style={{...inp,flex:1,fontFamily:'monospace'}}/>
+                    </div>
+                    <p style={{fontSize:11,color:C.muted,margin:'4px 0 0'}}>أحرف إنجليزية صغيرة وأرقام وشرطة فقط</p>
+                  </div>
+                  <div>
+                    <label style={lbl}>شعار (Tagline) يظهر تحت الاسم</label>
+                    <input value={editOrg.tagline||''} onChange={e=>setE('tagline',e.target.value)} placeholder="مثال: رحلات لا تُنسى في قلب الطبيعة السعودية" style={inp}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>لون التمييز (Accent Color)</label>
+                    <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                      <input type="color" value={editOrg.accent_color||'#F05537'} onChange={e=>setE('accent_color',e.target.value)}
+                        style={{width:44,height:36,border:`1px solid ${C.border}`,borderRadius:6,cursor:'pointer',padding:2}}/>
+                      <span style={{fontSize:12,color:C.muted,fontFamily:'monospace'}}>{editOrg.accent_color||'#F05537'}</span>
+                      {['#F05537','#1E0A3C','#25D366','#1DA1F2','#FF6B35','#6C5CE7'].map(c=>(
+                        <button key={c} onClick={()=>setE('accent_color',c)} style={{width:24,height:24,borderRadius:'50%',background:c,border:editOrg.accent_color===c?'2px solid #000':'none',cursor:'pointer'}}/>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+                    <div>
+                      <label style={lbl}>📷 إنستغرام</label>
+                      <input value={editOrg.social_instagram||''} onChange={e=>setE('social_instagram',e.target.value.replace('@',''))} placeholder="username" style={inp}/>
+                    </div>
+                    <div>
+                      <label style={lbl}>𝕏 تويتر</label>
+                      <input value={editOrg.social_twitter||''} onChange={e=>setE('social_twitter',e.target.value.replace('@',''))} placeholder="username" style={inp}/>
+                    </div>
+                    <div>
+                      <label style={lbl}>💬 واتساب</label>
+                      <input value={editOrg.social_whatsapp||''} onChange={e=>setE('social_whatsapp',e.target.value)} placeholder="966xxxxxxxxx" style={inp}/>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={lbl}>🌐 Custom Domain (اختياري)</label>
+                    <input value={editOrg.custom_domain||''} onChange={e=>setE('custom_domain',e.target.value)} placeholder="events.yourcompany.com" style={{...inp,fontFamily:'monospace'}}/>
+                    <p style={{fontSize:11,color:C.muted,margin:'4px 0 0'}}>
+                      أضف CNAME record في DNS يشير لـ <code style={{background:'#F8F7FA',padding:'1px 5px',borderRadius:3}}>cname.vercel-dns.com</code>
+                    </p>
+                  </div>
+                  <button onClick={saveOrg} disabled={saving} style={{padding:'10px',background:saved?C.green:C.orange,border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+                    {saving?'جاري الحفظ...':saved?'✓ تم الحفظ':'💾 حفظ الإعدادات'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* White label info */}
+            <div style={{background:'#F8F7FA',border:`1px solid ${C.border}`,borderRadius:12,padding:16}}>
+              <h3 style={{fontSize:13,fontWeight:700,color:C.navy,margin:'0 0 10px'}}>📌 كيف تربط دومينك الخاص؟</h3>
+              <div style={{display:'grid',gap:8}}>
+                {[
+                  ['1','اذهب إلى إعدادات DNS في موفر دومينك (GoDaddy، Namecheap، إلخ)'],
+                  ['2','أضف CNAME record: الاسم = events، القيمة = cname.vercel-dns.com'],
+                  ['3','أدخل events.yourcompany.com في حقل Custom Domain أعلاه'],
+                  ['4','انتظر 24 ساعة حتى ينتشر DNS — ثم ستعمل الصفحة تلقائياً'],
+                ].map(([n,t])=>(
+                  <div key={n} style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+                    <div style={{width:22,height:22,background:C.navy,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:11,fontWeight:700,flexShrink:0}}>{n}</div>
+                    <p style={{fontSize:12,color:C.text,margin:0,lineHeight:1.5}}>{t}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
