@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 const C = { navy:'#1E0A3C', orange:'#F05537', muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#166534' }
 
@@ -123,7 +124,8 @@ export default function CouponsPage() {
   const inactive = coupons.filter(c => !c.is_active || isExpired(c))
 
   if (loading) return (
-    <div style={{ padding:40, textAlign:'center', color:C.muted, fontFamily:'Tajawal,sans-serif' }}>جاري التحميل...</div>
+    <div style={{ padding:40, textAlign:'center', color:C.muted, fontFamily:'Tajawal,sans-serif' }}>
+      <MobilePageHeader title="الكوبونات" />جاري التحميل...</div>
   )
 
   return (
