@@ -204,7 +204,7 @@ export default function InfluencerProfile() {
                 color:'#fff', fontWeight:800, fontSize:15, cursor:'pointer', fontFamily:'inherit', marginBottom:10
               }}>📤 إرسال بريف الحملة</button>
 
-              <a href={`/dashboard/briefs/new?influencer=${inf.id}`} style={{
+              <a href={`/briefs/new?influencer=${inf.id}`} style={{
                 display:'block', width:'100%', padding:'10px', border:`1px solid ${C.border}`, borderRadius:10,
                 color:C.text, fontWeight:600, fontSize:13, cursor:'pointer', fontFamily:'inherit',
                 textAlign:'center', textDecoration:'none', boxSizing:'border-box'
@@ -238,7 +238,7 @@ export default function InfluencerProfile() {
           <div style={{ background:C.card, borderRadius:16, padding:28, maxWidth:500, width:'100%', direction:'rtl' }}>
             <h3 style={{ fontSize:18, fontWeight:800, color:C.navy, margin:'0 0 6px' }}>📤 إرسال بريف لـ {inf.display_name_ar}</h3>
             <p style={{ color:C.muted, fontSize:13, margin:'0 0 20px' }}>سيتلقى المؤثر طلبك ويرد بعرضه خلال 24 ساعة</p>
-            <a href={`/dashboard/briefs/new?influencer=${inf.id}`} style={{
+            <a href={`/briefs/new?influencer=${inf.id}`} style={{
               display:'block', padding:'13px', background:C.orange, borderRadius:10, color:'#fff',
               fontWeight:800, fontSize:15, textAlign:'center', textDecoration:'none', marginBottom:10
             }}>إنشاء بريف جديد ←</a>
