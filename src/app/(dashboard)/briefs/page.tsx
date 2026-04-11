@@ -57,7 +57,7 @@ export default function BriefsPage() {
           <h1 style={{ fontSize:24, fontWeight:800, color:C.navy, margin:'0 0 4px' }}>📋 حملات المؤثرين</h1>
           <p style={{ color:C.muted, fontSize:13, margin:0 }}>اعرض البريفات واستقبل العروض من المؤثرين</p>
         </div>
-        <a href="/dashboard/briefs/new" style={{ padding:'11px 20px', background:C.orange, borderRadius:10, color:'#fff', fontWeight:700, fontSize:14, textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}>
+        <a href="/briefs/new" style={{ padding:'11px 20px', background:C.orange, borderRadius:10, color:'#fff', fontWeight:700, fontSize:14, textDecoration:'none', display:'flex', alignItems:'center', gap:6 }}>
           + نشر بريف جديد
         </a>
       </div>
@@ -99,7 +99,7 @@ export default function BriefsPage() {
           <div style={{ fontSize:48, marginBottom:12 }}>📭</div>
           <h3 style={{ fontSize:18, color:C.navy, margin:'0 0 8px' }}>لا يوجد بريفات بعد</h3>
           <p style={{ color:C.muted, fontSize:14, margin:'0 0 20px' }}>انشر أول بريف لك واستقبل العروض من المؤثرين</p>
-          <a href="/dashboard/briefs/new" style={{ display:'inline-block', padding:'11px 24px', background:C.orange, borderRadius:10, color:'#fff', fontWeight:700, textDecoration:'none' }}>
+          <a href="/briefs/new" style={{ display:'inline-block', padding:'11px 24px', background:C.orange, borderRadius:10, color:'#fff', fontWeight:700, textDecoration:'none' }}>
             + نشر بريف جديد
           </a>
         </div>
@@ -129,7 +129,7 @@ export default function BriefsPage() {
                 </div>
 
                 <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                  <a href={`/dashboard/briefs/${brief.id}`} style={{ padding:'8px 16px', background:C.navy, borderRadius:8, color:'#fff', fontSize:13, fontWeight:700, textDecoration:'none' }}>
+                  <a href={`/briefs/${brief.id}`} style={{ padding:'8px 16px', background:C.navy, borderRadius:8, color:'#fff', fontSize:13, fontWeight:700, textDecoration:'none' }}>
                     عرض التقدمات ({brief.proposals_count || 0})
                   </a>
                   <a href={`/influencers`} style={{ padding:'8px 14px', border:`1px solid ${C.border}`, borderRadius:8, color:C.text, fontSize:13, fontWeight:600, textDecoration:'none' }}>
