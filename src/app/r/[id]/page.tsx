@@ -21,6 +21,7 @@ export default function RegistrationPage() {
   const [form, setForm]       = useState({ guest_name:'', guest_email:'', guest_phone:'', notes:'' })
 
   // Coupon state
+  const [refCode,    setRefCode]    = useState('')
   const [couponCode, setCouponCode] = useState('')
   const [coupon, setCoupon]   = useState<any>(null)
   const [couponError, setCouponError] = useState('')
@@ -28,6 +29,10 @@ export default function RegistrationPage() {
 
   useEffect(() => {
     if (!id) return
+    if (typeof window !== 'undefined') {
+      const urlRef = new URLSearchParams(window.location.search).get('ref')
+      if (urlRef) setRefCode(urlRef)
+    }
     sb.from('events')
       .select('id,title,start_date,location,capacity,price_from,category_icon,org_id,status,waitlist_enabled,organizations(name,logo_url,accent_color)')
       .eq('id', id).single()
@@ -77,6 +82,15 @@ export default function RegistrationPage() {
     e.preventDefault()
     if (!ev) return
     setSubmitting(true)
+    if (form.guest_email) {
+      const { data: dup } = await sb.from('registrations')
+        .select('id').eq('event_id', id as string).eq('guest_email', form.guest_email)
+        .neq('status','cancelled').maybeSingle()
+      if (dup) {
+        alert('⚠️ هذا البريد الإلكتروني مسجّل مسبقاً في هذه الفعالية')
+        setSubmitting(false); return
+      }
+    }
     const qr = 'EVT-' + Math.random().toString(36).substring(2,10).toUpperCase()
 
     const { data, error } = await sb
@@ -88,7 +102,9 @@ export default function RegistrationPage() {
         guest_phone: form.guest_phone || null,
         notes: (form.notes || '') + (coupon ? ` | كوبون: ${coupon.code}` : ''),
         qr_code: qr, status:'registered',
-        ticket_type:'general', source:'public_form'
+        ticket_type:'general',
+        source: refCode ? 'affiliate' : 'public_form',
+        referral_code: refCode || null
       })
       .select('id,qr_code').single()
 
