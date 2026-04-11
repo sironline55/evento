@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import ShareButtons from './ShareButtons'
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,9 +16,10 @@ const C = {
 
 export default async function PublicEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+
   const { data: ev } = await sb
     .from('events')
-    .select('*')
+    .select('*, organizations(name, logo_url, accent_color, slug)')
     .eq('id', id)
     .single()
 
@@ -29,168 +31,184 @@ export default async function PublicEventPage({ params }: { params: Promise<{ id
     .eq('event_id', id)
     .neq('status','cancelled')
 
-  const isFull = ev.capacity && regCount! >= ev.capacity
+  const isFull    = ev.capacity && (regCount||0) >= ev.capacity
   const spotsLeft = ev.capacity ? ev.capacity - (regCount||0) : null
-  const isPast = ev.end_date && new Date(ev.end_date) < new Date()
+  const isPast    = ev.end_date && new Date(ev.end_date) < new Date()
+  const org       = ev.organizations as any
+  const accent    = org?.accent_color || C.orange
 
-  const formatDate = (d: string) => new Date(d).toLocaleString('ar-SA', {
-    weekday:'long', year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit'
+  const pageUrl = `https://evento-h2ir.vercel.app/e/${id}`
+
+  const fmtDate = (d: string) => new Date(d).toLocaleString('ar-SA', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric',
+    hour:'2-digit', minute:'2-digit'
+  })
+  const fmtTime = (d: string) => new Date(d).toLocaleTimeString('ar-SA', {
+    hour:'2-digit', minute:'2-digit'
   })
 
-  const agenda = ev.agenda || []
-  const lineup = ev.lineup || []
+  const pct = ev.capacity ? Math.round(((regCount||0)/ev.capacity)*100) : 0
 
   return (
     <div style={{ minHeight:'100vh', background:C.bg, direction:'rtl', fontFamily:'Tajawal, system-ui, sans-serif' }}>
 
       {/* Sticky header */}
-      <div style={{ position:'sticky', top:0, zIndex:50, background:'rgba(255,255,255,0.95)', backdropFilter:'blur(8px)', borderBottom:`1px solid ${C.border}`, padding:'12px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <div style={{ width:28, height:28, background:C.orange, borderRadius:5, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:11 }}>E</div>
-          <span style={{ fontSize:13, fontWeight:700, color:C.navy }}>EventVMS</span>
+      <div style={{ position:'sticky', top:0, zIndex:50, background:'rgba(255,255,255,0.96)', backdropFilter:'blur(10px)', borderBottom:`1px solid ${C.border}`, padding:'10px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          {org?.logo_url ? (
+            <img src={org.logo_url} alt={org.name} style={{ width:28, height:28, borderRadius:6, objectFit:'cover' }}/>
+          ) : (
+            <div style={{ width:28, height:28, background:accent, borderRadius:6, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:11 }}>
+              {org?.name?.[0] || 'E'}
+            </div>
+          )}
+          <span style={{ fontSize:13, fontWeight:700, color:C.navy }}>{org?.name || 'EventVMS'}</span>
         </div>
         {!isPast && !isFull && (
           <Link href={`/r/${id}`} style={{
-            padding:'9px 20px', background:C.orange, color:'#fff',
-            borderRadius:6, textDecoration:'none', fontWeight:700, fontSize:13
+            padding:'9px 22px', background:accent, color:'#fff',
+            borderRadius:8, textDecoration:'none', fontWeight:700, fontSize:13
           }}>سجّل الآن</Link>
         )}
       </div>
 
-      {/* Cover image */}
+      {/* Hero */}
       {ev.cover_image ? (
-        <div style={{ height:320, position:'relative', overflow:'hidden' }}>
+        <div style={{ height:340, position:'relative', overflow:'hidden' }}>
           <img src={ev.cover_image} alt={ev.title} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.7))' }}/>
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.75))' }}/>
+          <div style={{ position:'absolute', bottom:28, right:24, left:24 }}>
+            <span style={{ fontSize:28, display:'block', marginBottom:8 }}>{ev.category_icon || '🎪'}</span>
+            <h1 style={{ fontSize:26, fontWeight:900, color:'#fff', margin:0, lineHeight:1.2, textShadow:'0 2px 8px rgba(0,0,0,.4)' }}>{ev.title}</h1>
+          </div>
         </div>
       ) : (
-        <div style={{ height:220, background:`linear-gradient(135deg,${C.navy},#3D1A78)`, display:'flex', alignItems:'flex-end', padding:32 }}>
-          <div style={{ fontSize:48 }}>{ev.category_icon || '🎪'}</div>
+        <div style={{ height:240, background:`linear-gradient(135deg,${C.navy},#3D1A78)`, display:'flex', flexDirection:'column', alignItems:'flex-start', justifyContent:'flex-end', padding:'28px 24px' }}>
+          <span style={{ fontSize:36, marginBottom:10 }}>{ev.category_icon || '🎪'}</span>
+          <h1 style={{ fontSize:26, fontWeight:900, color:'#fff', margin:0, lineHeight:1.25 }}>{ev.title}</h1>
         </div>
       )}
 
-      <div style={{ maxWidth:720, margin:'0 auto', padding:'0 16px' }}>
+      <div style={{ maxWidth:720, margin:'0 auto', padding:'0 16px 40px' }}>
 
-        {/* Main card */}
-        <div style={{ background:C.card, borderRadius:12, border:`1px solid ${C.border}`, marginTop:-40, position:'relative', zIndex:10, overflow:'hidden', marginBottom:16 }}>
-          <div style={{ padding:'24px 24px 20px' }}>
-            <div style={{ display:'flex', gap:8, marginBottom:12, flexWrap:'wrap' }}>
+        {/* Main info card */}
+        <div style={{ background:C.card, borderRadius:16, border:`1px solid ${C.border}`, marginTop:-32, position:'relative', zIndex:10, overflow:'hidden', marginBottom:14, boxShadow:'0 4px 24px rgba(0,0,0,.07)' }}>
+          <div style={{ padding:'24px 24px 18px' }}>
+
+            {/* Badges */}
+            <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap' }}>
               {ev.status === 'published' && !isPast && (
-                <span style={{ fontSize:12, padding:'4px 10px', background:'#EAF7E0', color:'#166534', borderRadius:12, fontWeight:600 }}>● نشط</span>
+                <span style={{ fontSize:12, padding:'4px 10px', background:'#EAF7E0', color:'#166534', borderRadius:20, fontWeight:600 }}>● نشط</span>
               )}
-              {ev.price_from && ev.price_from > 0 ? (
-                <span style={{ fontSize:12, padding:'4px 10px', background:'#FEF0ED', color:C.orange, borderRadius:12, fontWeight:600 }}>
-                  يبدأ من {ev.price_from} ريال
+              {ev.price_from && Number(ev.price_from) > 0 ? (
+                <span style={{ fontSize:12, padding:'4px 10px', background:'#FEF0ED', color:accent, borderRadius:20, fontWeight:600 }}>
+                  يبدأ من {Number(ev.price_from).toLocaleString('ar-SA')} ريال
                 </span>
               ) : (
-                <span style={{ fontSize:12, padding:'4px 10px', background:'#EDE9F7', color:'#7B4FBF', borderRadius:12, fontWeight:600 }}>مجاني</span>
+                <span style={{ fontSize:12, padding:'4px 10px', background:'#EDE9F7', color:'#7B4FBF', borderRadius:20, fontWeight:600 }}>مجاني</span>
               )}
               {isPast && (
-                <span style={{ fontSize:12, padding:'4px 10px', background:'#F8F7FA', color:C.muted, borderRadius:12, fontWeight:600 }}>منتهي</span>
+                <span style={{ fontSize:12, padding:'4px 10px', background:'#F8F7FA', color:C.muted, borderRadius:20, fontWeight:600 }}>انتهت الفعالية</span>
               )}
             </div>
 
-            <h1 style={{ fontSize:26, fontWeight:800, color:C.navy, margin:'0 0 8px' }}>{ev.title}</h1>
             {ev.description && (
-              <p style={{ fontSize:14, color:C.text, lineHeight:1.65, margin:0 }}>{ev.description}</p>
+              <p style={{ fontSize:14, color:C.text, lineHeight:1.75, margin:0 }}>{ev.description}</p>
             )}
           </div>
 
-          {/* Details grid */}
-          <div style={{ borderTop:`1px solid ${C.border}`, padding:'16px 24px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+          {/* Details */}
+          <div style={{ borderTop:`1px solid ${C.border}`, padding:'18px 24px', display:'grid', gridTemplateColumns:'1fr 1fr', gap:18 }}>
             {ev.start_date && (
-              <div style={{ display:'flex', gap:10 }}>
-                <span style={{ fontSize:20, flexShrink:0 }}>📅</span>
+              <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+                <span style={{ fontSize:22 }}>📅</span>
                 <div>
-                  <p style={{ fontSize:11, color:C.muted, margin:0 }}>التاريخ</p>
-                  <p style={{ fontSize:13, fontWeight:600, color:C.text, margin:'2px 0 0' }}>{formatDate(ev.start_date)}</p>
+                  <p style={{ fontSize:11, color:C.muted, margin:'0 0 3px', fontWeight:600 }}>التاريخ</p>
+                  <p style={{ fontSize:13, fontWeight:700, color:C.navy, margin:0 }}>{fmtDate(ev.start_date)}</p>
+                  {ev.end_date && (
+                    <p style={{ fontSize:11, color:C.muted, margin:'2px 0 0' }}>ينتهي: {fmtTime(ev.end_date)}</p>
+                  )}
                 </div>
               </div>
             )}
             {ev.location && (
-              <div style={{ display:'flex', gap:10 }}>
-                <span style={{ fontSize:20, flexShrink:0 }}>📍</span>
+              <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+                <span style={{ fontSize:22 }}>📍</span>
                 <div>
-                  <p style={{ fontSize:11, color:C.muted, margin:0 }}>الموقع</p>
-                  <p style={{ fontSize:13, fontWeight:600, color:C.text, margin:'2px 0 0' }}>{ev.location}</p>
+                  <p style={{ fontSize:11, color:C.muted, margin:'0 0 3px', fontWeight:600 }}>الموقع</p>
+                  <p style={{ fontSize:13, fontWeight:700, color:C.navy, margin:0 }}>{ev.location}</p>
+                  <a href={`https://maps.google.com/?q=${encodeURIComponent(ev.location)}`} target="_blank" rel="noopener"
+                    style={{ fontSize:11, color:accent, textDecoration:'none', marginTop:3, display:'inline-block' }}>
+                    افتح الخريطة ↗
+                  </a>
                 </div>
               </div>
             )}
             {ev.capacity && (
-              <div style={{ display:'flex', gap:10 }}>
-                <span style={{ fontSize:20, flexShrink:0 }}>🎟</span>
+              <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+                <span style={{ fontSize:22 }}>🎟</span>
                 <div>
-                  <p style={{ fontSize:11, color:C.muted, margin:0 }}>المقاعد المتبقية</p>
-                  <p style={{ fontSize:13, fontWeight:600, color: isFull?'#DC2626':C.text, margin:'2px 0 0' }}>
-                    {isFull ? 'اكتملت المقاعد' : `${spotsLeft?.toLocaleString('ar-SA')} مقعد متبقي`}
+                  <p style={{ fontSize:11, color:C.muted, margin:'0 0 3px', fontWeight:600 }}>المقاعد</p>
+                  <p style={{ fontSize:13, fontWeight:700, color: isFull?'#DC2626':C.navy, margin:'0 0 5px' }}>
+                    {isFull ? 'اكتملت المقاعد' : `${(spotsLeft||0).toLocaleString('ar-SA')} متبقي من ${ev.capacity.toLocaleString('ar-SA')}`}
                   </p>
+                  {!isFull && ev.capacity && (
+                    <div style={{ height:5, background:'#EDE9F7', borderRadius:4, overflow:'hidden' }}>
+                      <div style={{ height:'100%', width:`${pct}%`, background: pct>80?'#DC2626':accent, borderRadius:4, transition:'width .3s' }}/>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
-            {regCount! > 0 && (
-              <div style={{ display:'flex', gap:10 }}>
-                <span style={{ fontSize:20, flexShrink:0 }}>👥</span>
+            {(regCount||0) > 0 && (
+              <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+                <span style={{ fontSize:22 }}>👥</span>
                 <div>
-                  <p style={{ fontSize:11, color:C.muted, margin:0 }}>المسجلون</p>
-                  <p style={{ fontSize:13, fontWeight:600, color:C.text, margin:'2px 0 0' }}>{regCount?.toLocaleString('ar-SA')} شخص</p>
+                  <p style={{ fontSize:11, color:C.muted, margin:'0 0 3px', fontWeight:600 }}>المسجلون</p>
+                  <p style={{ fontSize:13, fontWeight:700, color:C.navy, margin:0 }}>{(regCount||0).toLocaleString('ar-SA')} شخص</p>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Share card */}
-        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:'16px 24px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div>
-            <p style={{ fontWeight:700, color:C.navy, fontSize:14, margin:0 }}>شارك الفعالية</p>
-            <p style={{ color:C.muted, fontSize:12, margin:'4px 0 0' }}>انسخ الرابط وأرسله لأصدقائك</p>
-          </div>
-          <div style={{ display:'flex', gap:8 }}>
-            <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${ev.title} - سجّل الآن`)}`} target="_blank" rel="noopener" style={{ padding:'8px 14px', background:'#25D366', color:'#fff', borderRadius:8, textDecoration:'none', fontSize:13, fontWeight:600 }}>واتساب</a>
-            <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(ev.title)}`} target="_blank" rel="noopener" style={{ padding:'8px 14px', background:'#000', color:'#fff', borderRadius:8, textDecoration:'none', fontSize:13, fontWeight:600 }}>X</a>
-          </div>
-        </div>
+        {/* Share card — client component for copy */}
+        <ShareButtons eventTitle={ev.title} pageUrl={pageUrl} accent={accent} />
 
-        {/* Agenda */}
-        {agenda.length > 0 && (
-          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:24, marginBottom:16 }}>
-            <h2 style={{ fontSize:16, fontWeight:700, color:C.navy, margin:'0 0 16px' }}>📋 البرنامج</h2>
-            <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
-              {agenda.map((item: any, i: number) => (
-                <div key={i} style={{ display:'flex', gap:16, paddingBottom:16, borderBottom: i<agenda.length-1?`1px solid ${C.border}`:'none', marginBottom: i<agenda.length-1?16:0 }}>
-                  <div style={{ flexShrink:0, textAlign:'center', minWidth:52 }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:C.orange, background:'#FEF0ED', padding:'4px 8px', borderRadius:6, display:'inline-block' }}>{item.time}</span>
-                  </div>
-                  <div>
-                    <p style={{ fontSize:14, fontWeight:700, color:C.navy, margin:0 }}>{item.title}</p>
-                    {item.speaker && <p style={{ fontSize:12, color:C.muted, margin:'2px 0 0' }}>👤 {item.speaker}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Registration CTA */}
+        {/* CTA */}
         {!isPast && (
-          <div style={{ background:`linear-gradient(135deg,${C.navy},#3D1A78)`, borderRadius:12, padding:24, marginBottom:24, textAlign:'center' }}>
+          <div style={{ background:`linear-gradient(135deg,${C.navy},#3D1A78)`, borderRadius:16, padding:'28px 24px', marginTop:14, textAlign:'center' }}>
             {isFull ? (
               <>
-                <p style={{ color:'rgba(255,255,255,0.7)', fontSize:13, margin:'0 0 8px' }}>اكتملت مقاعد هذه الفعالية</p>
-                <p style={{ color:'#fff', fontWeight:700, fontSize:16, margin:0 }}>تابعنا للفعاليات القادمة</p>
+                <p style={{ color:'rgba(255,255,255,.7)', fontSize:14, margin:'0 0 8px' }}>اكتملت المقاعد</p>
+                <p style={{ color:'#fff', fontWeight:700, fontSize:16, margin:0 }}>تابع فعالياتنا القادمة</p>
+                {org?.slug && (
+                  <Link href={`/org/${org.slug}`} style={{ display:'inline-block', marginTop:14, padding:'10px 28px', background:'rgba(255,255,255,.15)', color:'#fff', borderRadius:8, textDecoration:'none', fontWeight:600, fontSize:14 }}>
+                    عرض الفعاليات الأخرى
+                  </Link>
+                )}
               </>
             ) : (
               <>
-                <p style={{ color:'rgba(255,255,255,0.7)', fontSize:13, margin:'0 0 8px' }}>
-                  {spotsLeft ? `${spotsLeft} مقعد متبقي فقط` : 'التسجيل مفتوح'}
+                <p style={{ color:'rgba(255,255,255,.7)', fontSize:13, margin:'0 0 6px' }}>
+                  {spotsLeft !== null ? `${(spotsLeft).toLocaleString('ar-SA')} مقعد متبقي فقط` : 'التسجيل مفتوح'}
                 </p>
                 <Link href={`/r/${id}`} style={{
-                  display:'inline-block', padding:'14px 40px',
-                  background:C.orange, color:'#fff', borderRadius:8,
-                  textDecoration:'none', fontWeight:800, fontSize:15
+                  display:'inline-block', padding:'14px 48px',
+                  background:accent, color:'#fff', borderRadius:10,
+                  textDecoration:'none', fontWeight:800, fontSize:16
                 }}>🎟 سجّل مقعدك الآن</Link>
               </>
             )}
+          </div>
+        )}
+
+        {/* Org footer */}
+        {org && (
+          <div style={{ textAlign:'center', marginTop:24 }}>
+            <Link href={`/org/${org.slug}`} style={{ color:C.muted, fontSize:12, textDecoration:'none' }}>
+              عرض جميع فعاليات {org.name} ←
+            </Link>
           </div>
         )}
       </div>
