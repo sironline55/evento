@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 const C = { navy:'#1E0A3C', orange:'#F05537', text:'#39364F', muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFF', green:'#3A7D0A', red:'#DC2626' }
 
@@ -100,6 +101,7 @@ export default function ContractsPage() {
 
   return (
     <div style={{ padding:'28px 24px', direction:'rtl', maxWidth:960, margin:'0 auto' }}>
+      <MobilePageHeader title="العقود" />
       <div style={{ marginBottom:24 }}>
         <h1 style={{ fontSize:24, fontWeight:800, color:C.navy, margin:'0 0 4px' }}>📄 عقود المؤثرين</h1>
         <p style={{ color:C.muted, fontSize:13, margin:0 }}>تابع الحملات النشطة وراجع المحتوى وأفرج عن المدفوعات</p>
