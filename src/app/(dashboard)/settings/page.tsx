@@ -311,9 +311,9 @@ export default function SettingsPage() {
             {/* Stats row */}
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
               {[
-                {icon:'📅',label:'الفعاليات',     value:'—',        note:'لا حد في الخطة الحالية'},
-                {icon:'👥',label:'أعضاء الفريق',  value:`${activeMem}/${org.max_members||5}`, note:`${pendingMem} دعوة معلقة`},
-                {icon:'📊',label:'الحالة',         value:org.status==='active'?'نشط':'—', note:org.plan||'free'},
+                {icon:'📅',label:'الفعاليات',    value:'—',        note:'لا حد في الخطة الحالية'},
+                {icon:'👥',label:'أعضاء الفريق', value:`${activeMem}/${org.max_members||5}`, note:`${pendingMem} دعوة معلقة`},
+                {icon:'📊',label:'الحالة',        value:org.status==='active'?'نشط':'—', note:org.plan||'free'},
               ].map(s=>(
                 <div key={s.label} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:'14px 16px'}}>
                   <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}>
@@ -326,19 +326,45 @@ export default function SettingsPage() {
               ))}
             </div>
 
-            {/* Edit form */}
+            {/* ── SECTION 1: الهوية البصرية ──────────────────────── */}
             <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:22,marginBottom:14}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-                <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:0}}>بيانات المنظمة</h3>
-                <button onClick={()=>setEditing(!editing)} style={{padding:'6px 14px',border:`1px solid ${C.border}`,borderRadius:6,background:C.bg,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text}}>
+                <div>
+                  <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:0}}>🎨 الهوية البصرية</h3>
+                  <p style={{fontSize:12,color:C.muted,margin:'2px 0 0'}}>الشعار والغلاف والبيانات الأساسية</p>
+                </div>
+                <button onClick={()=>setEditing(!editing)} style={{padding:'6px 14px',border:`1px solid ${C.border}`,borderRadius:6,background:editing?C.bg:C.orange,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:editing?C.text:'#fff',transition:'all .2s'}}>
                   {editing?'إلغاء':'✏️ تعديل'}
                 </button>
               </div>
               {editing ? (
-                <div style={{display:'grid',gap:12}}>
+                <div style={{display:'grid',gap:14}}>
+
+                  {/* Logo + Cover URLs */}
+                  <div style={{background:'#F8F7FA',borderRadius:10,padding:14,display:'grid',gap:10}}>
+                    <p style={{fontSize:12,fontWeight:700,color:C.navy,margin:0}}>🖼️ الصور</p>
+                    <div>
+                      <label style={lbl}>رابط الشعار (Logo URL)</label>
+                      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                        {editOrg.logo_url && <img src={editOrg.logo_url} alt="" style={{width:40,height:40,borderRadius:8,objectFit:'cover',border:`1px solid ${C.border}`,flexShrink:0}}/>}
+                        <input value={editOrg.logo_url} onChange={e=>setE('logo_url',e.target.value)} placeholder="https://..." style={{...inp,fontFamily:'monospace',fontSize:12}}/>
+                      </div>
+                      <p style={{fontSize:11,color:C.muted,margin:'4px 0 0'}}>يظهر في الهيدر والكتالوج. ارفع الصورة على Cloudinary أو Imgbb ثم ضع الرابط هنا.</p>
+                    </div>
+                    <div>
+                      <label style={lbl}>صورة الغلاف (Cover Image URL)</label>
+                      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                        {editOrg.cover_image && <img src={editOrg.cover_image} alt="" style={{width:80,height:40,borderRadius:8,objectFit:'cover',border:`1px solid ${C.border}`,flexShrink:0}}/>}
+                        <input value={editOrg.cover_image} onChange={e=>setE('cover_image',e.target.value)} placeholder="https://..." style={{...inp,fontFamily:'monospace',fontSize:12}}/>
+                      </div>
+                      <p style={{fontSize:11,color:C.muted,margin:'4px 0 0'}}>تظهر كخلفية في الهيدر الرئيسي للكتالوج.</p>
+                    </div>
+                  </div>
+
+                  {/* Basic info */}
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
                     <div>
-                      <label style={lbl}>الاسم *</label>
+                      <label style={lbl}>الاسم بالإنجليزية *</label>
                       <input value={editOrg.name} onChange={e=>setE('name',e.target.value)} style={inp}/>
                     </div>
                     <div>
@@ -346,15 +372,13 @@ export default function SettingsPage() {
                       <input value={editOrg.name_ar} onChange={e=>setE('name_ar',e.target.value)} style={inp}/>
                     </div>
                   </div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                    <div>
-                      <label style={lbl}>البريد</label>
-                      <input type="email" value={editOrg.email} onChange={e=>setE('email',e.target.value)} style={inp}/>
-                    </div>
-                    <div>
-                      <label style={lbl}>الجوال</label>
-                      <input value={editOrg.phone} onChange={e=>setE('phone',e.target.value)} style={inp}/>
-                    </div>
+                  <div>
+                    <label style={lbl}>الشعار التعريفي (Tagline)</label>
+                    <input value={editOrg.tagline} onChange={e=>setE('tagline',e.target.value)} placeholder="مثال: رحلات لا تُنسى في قلب الطبيعة السعودية" style={inp}/>
+                  </div>
+                  <div>
+                    <label style={lbl}>نبذة عن المنظمة</label>
+                    <textarea value={editOrg.description} onChange={e=>setE('description',e.target.value)} rows={3} placeholder="وصف مختصر يظهر في الكتالوج العام..." style={{...inp,resize:'vertical'}}/>
                   </div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
                     <div>
@@ -370,36 +394,116 @@ export default function SettingsPage() {
                       </select>
                     </div>
                     <div>
-                      <label style={lbl}>الموقع</label>
+                      <label style={lbl}>الموقع الإلكتروني</label>
                       <input value={editOrg.website} onChange={e=>setE('website',e.target.value)} placeholder="https://..." style={inp}/>
                     </div>
                   </div>
-                  <div>
-                    <label style={lbl}>نبذة</label>
-                    <textarea value={editOrg.description} onChange={e=>setE('description',e.target.value)} rows={2} style={{...inp,resize:'vertical'}}/>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                    <div>
+                      <label style={lbl}>البريد الإلكتروني</label>
+                      <input type="email" value={editOrg.email} onChange={e=>setE('email',e.target.value)} style={inp}/>
+                    </div>
+                    <div>
+                      <label style={lbl}>رقم الجوال</label>
+                      <input value={editOrg.phone} onChange={e=>setE('phone',e.target.value)} style={inp}/>
+                    </div>
                   </div>
-                  <button onClick={saveOrg} disabled={saving} style={{padding:'10px',background:saved?C.green:C.orange,border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
-                    {saving?'جاري الحفظ...':saved?'✓ تم الحفظ':'💾 حفظ التغييرات'}
+
+                  {/* Legal */}
+                  <div style={{background:'#F8F7FA',borderRadius:10,padding:14,display:'grid',gap:10}}>
+                    <p style={{fontSize:12,fontWeight:700,color:C.navy,margin:0}}>📄 البيانات القانونية</p>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                      <div>
+                        <label style={lbl}>رقم الترخيص السياحي</label>
+                        <input value={editOrg.license_number} onChange={e=>setE('license_number',e.target.value)} placeholder="مثال: 73106434" style={{...inp,fontFamily:'monospace'}}/>
+                      </div>
+                      <div>
+                        <label style={lbl}>الرقم الضريبي (VAT)</label>
+                        <input value={editOrg.vat_number} onChange={e=>setE('vat_number',e.target.value)} placeholder="مثال: 314132175300003" style={{...inp,fontFamily:'monospace'}}/>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Social media */}
+                  <div style={{background:'#F8F7FA',borderRadius:10,padding:14,display:'grid',gap:10}}>
+                    <p style={{fontSize:12,fontWeight:700,color:C.navy,margin:0}}>📲 حسابات التواصل الاجتماعي</p>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                      {[
+                        {k:'social_instagram', l:'📷 إنستغرام', ph:'username (بدون @)'},
+                        {k:'social_twitter',   l:'𝕏 تويتر / X', ph:'username (بدون @)'},
+                        {k:'social_whatsapp',  l:'💬 واتساب',    ph:'966xxxxxxxxx'},
+                        {k:'social_tiktok',    l:'🎵 تيك توك',   ph:'username (بدون @)'},
+                        {k:'social_snapchat',  l:'👻 سناب شات',  ph:'username'},
+                        {k:'social_linkedin',  l:'💼 لينكد إن',  ph:'company-name'},
+                      ].map(({k,l,ph})=>(
+                        <div key={k}>
+                          <label style={lbl}>{l}</label>
+                          <div style={{display:'flex',alignItems:'center',gap:6}}>
+                            {k!=='social_whatsapp'&&<span style={{fontSize:11,color:C.muted,whiteSpace:'nowrap'}}>@</span>}
+                            <input value={editOrg[k]||''} onChange={e=>setE(k,e.target.value.replace('@',''))} placeholder={ph} style={inp}/>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button onClick={saveOrg} disabled={saving} style={{padding:'12px',background:saved?C.green:C.orange,border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer',fontFamily:'inherit',transition:'background .3s'}}>
+                    {saving?'⏳ جاري الحفظ...':saved?'✓ تم الحفظ بنجاح':'💾 حفظ جميع التغييرات'}
                   </button>
                 </div>
               ) : (
-                <div style={{display:'grid',gap:8}}>
-                  {[
-                    ['🏢 الاسم',       org.name_ar||org.name],
-                    ['📧 البريد',      org.email||'—'],
-                    ['📞 الجوال',      org.phone||'—'],
-                    ['📍 المدينة',     org.city||'—'],
-                    ['🏭 القطاع',      org.industry||'—'],
-                    ['🌐 الموقع',      org.website||'—'],
-                  ].map(([l,v]) => (
-                    <div key={l} style={{display:'grid',gridTemplateColumns:'130px 1fr',padding:'8px 0',borderBottom:`1px solid ${C.border}`}}>
-                      <span style={{fontSize:12,color:C.muted,fontWeight:600}}>{l}</span>
-                      <span style={{fontSize:13,color:C.text,fontWeight:600}}>{v}</span>
+                /* View mode */
+                <div>
+                  {/* Logo + cover preview */}
+                  {(org.logo_url||org.cover_image) && (
+                    <div style={{display:'flex',gap:12,marginBottom:16,alignItems:'center'}}>
+                      {org.logo_url&&<img src={org.logo_url} alt="" style={{width:56,height:56,borderRadius:10,objectFit:'cover',border:`1px solid ${C.border}`}}/>}
+                      {org.cover_image&&<img src={org.cover_image} alt="" style={{height:56,width:120,borderRadius:10,objectFit:'cover',border:`1px solid ${C.border}`}}/>}
+                      {!org.logo_url&&!org.cover_image&&<div style={{color:C.muted,fontSize:12}}>لم يتم رفع صور بعد</div>}
                     </div>
-                  ))}
-                  {org.description && (
-                    <p style={{fontSize:13,color:C.text,lineHeight:1.6,margin:'6px 0 0',background:'#F8F7FA',padding:12,borderRadius:8}}>{org.description}</p>
                   )}
+                  <div style={{display:'grid',gap:0}}>
+                    {[
+                      ['🏢 الاسم',         org.name_ar||org.name],
+                      ['💬 الشعار',        org.tagline||'—'],
+                      ['📧 البريد',        org.email||'—'],
+                      ['📞 الجوال',        org.phone||'—'],
+                      ['📍 المدينة',       org.city||'—'],
+                      ['🏭 القطاع',        org.industry||'—'],
+                      ['🌐 الموقع',        org.website||'—'],
+                      ['📄 رقم الترخيص',  (org as any).license_number||'—'],
+                      ['🧾 الرقم الضريبي',(org as any).vat_number||'—'],
+                    ].map(([l,v]) => (
+                      <div key={l} style={{display:'grid',gridTemplateColumns:'140px 1fr',padding:'9px 0',borderBottom:`1px solid ${C.border}`}}>
+                        <span style={{fontSize:12,color:C.muted,fontWeight:600}}>{l}</span>
+                        <span style={{fontSize:13,color:C.text,fontWeight:600,fontFamily:l.includes('رقم')||l.includes('ضريبي')?'monospace':'inherit'}}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Social accounts */}
+                  <div style={{marginTop:14}}>
+                    <p style={{fontSize:12,fontWeight:700,color:C.navy,margin:'0 0 10px'}}>📲 حسابات التواصل</p>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      {[
+                        {k:'social_instagram', l:'إنستغرام', icon:'📷', link:`https://instagram.com/`},
+                        {k:'social_twitter',   l:'تويتر',    icon:'𝕏',  link:`https://x.com/`},
+                        {k:'social_whatsapp',  l:'واتساب',   icon:'💬', link:`https://wa.me/`},
+                        {k:'social_tiktok',    l:'تيك توك',  icon:'🎵', link:`https://tiktok.com/@`},
+                        {k:'social_snapchat',  l:'سناب',     icon:'👻', link:`https://snapchat.com/add/`},
+                        {k:'social_linkedin',  l:'لينكدإن',  icon:'💼', link:`https://linkedin.com/company/`},
+                      ].filter(s=>(org as any)[s.k]).map(s=>(
+                        <a key={s.k} href={`${s.link}${(org as any)[s.k]}`} target="_blank" rel="noopener"
+                          style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background:'#F8F7FA',border:`1px solid ${C.border}`,borderRadius:8,textDecoration:'none',color:C.text,fontSize:12,fontWeight:600}}>
+                          <span>{s.icon}</span><span>{s.l}</span>
+                          <span style={{fontSize:11,color:C.muted}}>@{(org as any)[s.k]}</span>
+                        </a>
+                      ))}
+                      {!['social_instagram','social_twitter','social_whatsapp','social_tiktok','social_snapchat','social_linkedin'].some(k=>(org as any)[k]) && (
+                        <p style={{color:C.muted,fontSize:12,margin:0}}>لم يتم إضافة حسابات بعد — اضغط تعديل لإضافتها</p>
+                      )}
+                    </div>
+                  </div>
+                  {org.description && <p style={{fontSize:13,color:C.text,lineHeight:1.6,margin:'14px 0 0',background:'#F8F7FA',padding:12,borderRadius:8}}>{org.description}</p>}
                 </div>
               )}
             </div>
