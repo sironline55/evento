@@ -794,7 +794,7 @@ export default function SettingsPage() {
                           {k:'social_tiktok',    l:'🎵 تيك توك',   ph:'username'},
                           {k:'social_snapchat',  l:'👻 سناب شات',  ph:'username'},
                           {k:'social_linkedin',  l:'💼 لينكدإن',   ph:'company-name'},
-                        ] as const).map(({k,l,ph})=>(
+                        ]).map(({k,l,ph})=>(
                           <div key={k}>
                             <label style={lbl}>{l}</label>
                             <div style={{display:'flex',alignItems:'center',gap:5}}>
@@ -856,7 +856,7 @@ export default function SettingsPage() {
                           {k:'social_tiktok',   l:'تيك توك', icon:'🎵',href:'https://tiktok.com/@'},
                           {k:'social_snapchat', l:'سناب',    icon:'👻',href:'https://snapchat.com/add/'},
                           {k:'social_linkedin', l:'لينكدإن', icon:'💼',href:'https://linkedin.com/company/'},
-                        ] as const).filter(s=>(org as any)[s.k]).map(s=>(
+                        ]).filter(s=>(org as any)[s.k]).map(s=>(
                           <a key={s.k} href={`${s.href}${(org as any)[s.k]}`} target="_blank" rel="noopener"
                             style={{display:'flex',alignItems:'center',gap:6,padding:'6px 12px',background:'#F8F7FA',border:`1px solid ${C.border}`,borderRadius:8,textDecoration:'none',color:C.text,fontSize:12,fontWeight:600}}>
                             <span>{s.icon}</span><span>{s.l}</span>
