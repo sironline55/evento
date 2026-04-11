@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Calendar, Users, BarChart2, Briefcase,
-  ScanLine, Settings, CreditCard, Building2, Tag
+  ScanLine, Settings, CreditCard, Building2, Tag, Bell
 } from 'lucide-react'
 
 const NAV = [
@@ -18,6 +18,7 @@ const NAV = [
 ]
 
 const BOTTOM_NAV = [
+  { href: '/notifications', label: 'الإشعارات', icon: Bell      },
   { href: '/settings', label: 'الإعدادات',   icon: Settings   },
   { href: '/billing',  label: 'المالية',      icon: CreditCard },
   { href: '/accounts', label: 'الحسابات',     icon: Building2  },
