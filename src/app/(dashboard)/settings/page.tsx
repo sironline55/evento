@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
-  muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#3A7D0A'
+  muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#3A7D0A', red:'#DC2626'
 }
 const inp: React.CSSProperties = {
   width:'100%', padding:'10px 14px', border:`1px solid ${C.border}`, borderRadius:8,
