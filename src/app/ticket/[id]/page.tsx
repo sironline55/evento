@@ -115,6 +115,7 @@ export default function TicketPage() {
   const { id } = useParams()
   const [reg, setReg] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [shareCopied, setShareCopied] = useState(false)
   const ticketRef = useRef<HTMLDivElement>(null)
 
   useEffect(()=>{
@@ -126,7 +127,24 @@ export default function TicketPage() {
       .then(({ data }) => { setReg(data); setLoading(false) })
   }, [id])
 
-  function handlePrint() { window.print() }
+  function handlePrint() {
+    // Trigger browser print → Save as PDF
+    const style = document.createElement('style')
+    style.innerHTML = `
+      @page { size: A5 portrait; margin: 8mm; }
+      @media print {
+        body > *:not(.ticket-root) { display:none!important; }
+        .ticket-root > div:first-child,
+        .ticket-root > div:last-child,
+        .ticket-root > div:nth-last-child(2) { display:none!important; }
+        .ticket-root { background:white!important; padding:0!important; min-height:auto!important; }
+        * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      }
+    `
+    document.head.appendChild(style)
+    window.print()
+    setTimeout(() => document.head.removeChild(style), 1000)
+  }
 
   async function handleShare() {
     if (navigator.share) {
