@@ -73,7 +73,7 @@ export default function NewBriefPage() {
       status: 'open',
     })
     setSaving(false)
-    if (!error) router.push('/dashboard/briefs')
+    if (!error) router.push('/briefs')
     else alert('خطأ: ' + error.message)
   }
 
@@ -87,7 +87,7 @@ export default function NewBriefPage() {
 
         {/* Header */}
         <div style={{ marginBottom:24 }}>
-          <a href="/dashboard/briefs" style={{ color:C.muted, fontSize:13, textDecoration:'none' }}>← الرجوع للبريفات</a>
+          <a href="/briefs" style={{ color:C.muted, fontSize:13, textDecoration:'none' }}>← الرجوع للبريفات</a>
           <h1 style={{ fontSize:24, fontWeight:800, color:C.navy, margin:'8px 0 4px' }}>📋 نشر بريف حملة مؤثر</h1>
           <p style={{ color:C.muted, fontSize:13 }}>اكتب تفاصيل احتياجك وسيتقدم المؤثرون المناسبون بعروضهم</p>
         </div>
