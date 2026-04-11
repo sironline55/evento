@@ -69,7 +69,7 @@ export default function InfluencersPage() {
             placeholder="ابحث باسم المؤثر أو التخصص..."
             style={{ flex:1, padding:'13px 18px', borderRadius:10, border:'none', fontSize:15, fontFamily:'inherit', outline:'none' }}
           />
-          <a href="/dashboard/briefs/new" style={{
+          <a href="/briefs/new" style={{
             padding:'13px 20px', background:C.orange, borderRadius:10, color:'#fff',
             fontWeight:800, fontSize:14, textDecoration:'none', whiteSpace:'nowrap', display:'flex', alignItems:'center'
           }}>+ نشر بريف</a>
