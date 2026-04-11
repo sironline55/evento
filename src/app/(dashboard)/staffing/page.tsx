@@ -572,6 +572,18 @@ export default function StaffingPage() {
                       </div>
                     </div>
                     <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+                      {/* Share button for public requests */}
+                      {req.has_public_page && req.slug && (
+                        <a
+                          href={`https://wa.me/?text=${encodeURIComponent('فرصة عمل: '+req.title+'\n'+window.location.origin+'/jobs/'+req.slug)}`}
+                          target="_blank" rel="noopener"
+                          onClick={e=>e.stopPropagation()}
+                          style={{padding:'7px 12px',background:'#25D366',borderRadius:7,color:'#fff',fontWeight:700,fontSize:12,textDecoration:'none',display:'flex',alignItems:'center',gap:4}}
+                        >📲 مشاركة</a>
+                      )}
+                      {req.has_public_page && req.slug && (
+                        <button onClick={e=>{e.stopPropagation();navigator.clipboard?.writeText(window.location.origin+'/jobs/'+req.slug);}} style={{padding:'7px 10px',background:'#EAF7E0',border:'none',borderRadius:7,cursor:'pointer',fontSize:12,color:C.green,fontWeight:700,fontFamily:'inherit'}}>🔗 نسخ</button>
+                      )}
                       <button onClick={()=>setViewApps(req)} style={{padding:'7px 14px',background:appCnt>0?'#EDE9F7':C.bg,border:`1px solid ${appCnt>0?'#B4A7D6':C.border}`,borderRadius:7,cursor:'pointer',fontWeight:600,fontSize:12,color:appCnt>0?'#5B3FA0':C.text,fontFamily:'inherit'}}>📨 {appCnt} طلب تقديم</button>
                       {req.has_public_page&&req.slug&&(<>
                         <button onClick={()=>navigator.clipboard?.writeText(shareUrl)} style={{padding:'7px 12px',background:'#E8F0FE',border:'none',borderRadius:7,cursor:'pointer',fontSize:12,color:'#1967D2',fontWeight:600,fontFamily:'inherit'}}>🔗 نسخ الرابط</button>
