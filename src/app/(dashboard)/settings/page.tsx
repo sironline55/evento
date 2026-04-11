@@ -86,7 +86,7 @@ export default function SettingsPage() {
         const { data: o } = await sb.from('organizations').select('*').eq('id', orgId).single()
         if (o) {
           setOrg(o)
-          setEditOrg({ name:o.name||'', name_ar:o.name_ar||'', email:o.email||'', phone:o.phone||'', website:o.website||'', city:o.city||'', industry:o.industry||'', description:o.description||'' })
+          setEditOrg({ name:o.name||'', name_ar:o.name_ar||'', email:o.email||'', phone:o.phone||'', website:o.website||'', city:o.city||'', industry:o.industry||'', description:o.description||'', logo_url:o.logo_url||'', cover_image:o.cover_image||'', slug:o.slug||'', tagline:o.tagline||'', accent_color:o.accent_color||'#F05537', social_instagram:o.social_instagram||'', social_twitter:o.social_twitter||'', social_whatsapp:o.social_whatsapp||'', social_tiktok:(o as any).social_tiktok||'', social_snapchat:(o as any).social_snapchat||'', social_linkedin:(o as any).social_linkedin||'', custom_domain:o.custom_domain||'', license_number:(o as any).license_number||'', vat_number:(o as any).vat_number||'' })
           const [{ data: mems }, { data: presets }] = await Promise.all([
             sb.from('org_members').select('*').eq('org_id', orgId).order('created_at'),
             sb.from('role_presets').select('*').eq('org_id', orgId).order('created_at'),
@@ -145,15 +145,29 @@ export default function SettingsPage() {
     if (!org) return
     setSaving(true)
     const { error } = await sb.from('organizations').update({
-      name:        editOrg.name.trim(),
-      name_ar:     editOrg.name_ar.trim()||null,
-      email:       editOrg.email||null,
-      phone:       editOrg.phone||null,
-      website:     editOrg.website||null,
-      city:        editOrg.city||null,
-      industry:    editOrg.industry||null,
-      description: editOrg.description||null,
-      updated_at:  new Date().toISOString(),
+      name:             editOrg.name.trim(),
+      name_ar:          editOrg.name_ar.trim()||null,
+      email:            editOrg.email||null,
+      phone:            editOrg.phone||null,
+      website:          editOrg.website||null,
+      city:             editOrg.city||null,
+      industry:         editOrg.industry||null,
+      description:      editOrg.description||null,
+      logo_url:         editOrg.logo_url||null,
+      cover_image:      editOrg.cover_image||null,
+      slug:             editOrg.slug||null,
+      tagline:          editOrg.tagline||null,
+      accent_color:     editOrg.accent_color||'#F05537',
+      social_instagram: editOrg.social_instagram||null,
+      social_twitter:   editOrg.social_twitter||null,
+      social_whatsapp:  editOrg.social_whatsapp||null,
+      social_tiktok:    editOrg.social_tiktok||null,
+      social_snapchat:  editOrg.social_snapchat||null,
+      social_linkedin:  editOrg.social_linkedin||null,
+      custom_domain:    editOrg.custom_domain||null,
+      license_number:   editOrg.license_number||null,
+      vat_number:       editOrg.vat_number||null,
+      updated_at:       new Date().toISOString(),
     }).eq('id', org.id)
     if (!error) {
       setOrg((o:any) => ({...o,...editOrg}))
