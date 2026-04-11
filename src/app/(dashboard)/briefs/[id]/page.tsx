@@ -1,4 +1,10 @@
 'use client'
+// WhatsApp notification trigger
+async function triggerWhatsApp(type: string, userId: string, phone: string, data: any, refId?: string) {
+  try {
+    await fetch('/api/whatsapp/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type, userId, phone, data, referenceId: refId }) })
+  } catch {}
+}
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
@@ -73,6 +79,12 @@ export default function BriefDetailPage() {
 
     if (!contractErr) {
       await sb.from('campaign_proposals').update({ status:'accepted' }).eq('id', proposal.id)
+      // 🔔 WhatsApp: notify organizer confirmed + influencer accepted
+      triggerWhatsApp('inf_proposal_accepted', proposal.influencer_id, '+966500000000', {
+        name: inf?.display_name_ar || inf?.display_name || 'مؤثر',
+        brief_title: brief?.title || 'الحملة',
+        price: proposal.proposed_price?.toLocaleString('ar-SA'),
+      }, proposal.id)
       // Reject others if max reached
       const selectedCount = proposals.filter(p => p.status === 'accepted').length + 1
       if (selectedCount >= brief.influencers_needed) {
