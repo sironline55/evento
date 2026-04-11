@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 const C = { navy:'#1E0A3C', orange:'#F05537', muted:'#6F7287', border:'#DBDAE3', card:'#FFFFFF' }
 const BASE_URL = 'https://evento-h2ir.vercel.app'
@@ -88,6 +89,7 @@ export default function AffiliatePage() {
 
   return (
     <div style={{ direction:'rtl', fontFamily:'Tajawal,sans-serif', padding:'24px 20px', maxWidth:900, margin:'0 auto' }}>
+      <MobilePageHeader title="روابط الإحالة" />
 
       {toast && (
         <div style={{ position:'fixed', top:20, left:'50%', transform:'translateX(-50%)', zIndex:9999,
