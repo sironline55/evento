@@ -15,6 +15,7 @@ const NAV = [
   { href: '/briefs', label: 'الحملات',      icon: Tag     },
   { href: '/scanner',   label: 'الماسح',      icon: ScanLine   },
   { href: '/coupons',   label: 'الكوبونات',   icon: Tag        },
+  { href: '/refunds',   label: 'الاسترداد',    icon: CreditCard },
 ]
 
 const BOTTOM_NAV = [
