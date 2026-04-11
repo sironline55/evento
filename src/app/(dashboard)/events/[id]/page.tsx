@@ -5,6 +5,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import * as XLSX from 'xlsx'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 const C = { navy:'#1E0A3C',orange:'#F05537',text:'#39364F',muted:'#6F7287',border:'#DBDAE3',bg:'#FAFAFA',card:'#FFFFFF',green:'#3A7D0A' }
 const ST: Record<string,{label:string;color:string;bg:string}> = {
@@ -251,6 +252,7 @@ export default function EventDetailPage() {
 
   return (
     <div style={{minHeight:'100vh',background:C.bg,direction:'rtl'}}>
+      <MobilePageHeader title="إدارة الفعالية" back="/events"/>
       {/* Header */}
       <div style={{background:C.card,borderBottom:`1px solid ${C.border}`,padding:'16px 20px'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:10}}>
