@@ -84,16 +84,16 @@ export default function AttendeesPage() {
           </div>
         ) : (
           <>
-            <div style={{ display:'grid', gridTemplateColumns:'2fr 2fr 1fr 1fr 100px',
+            <div style={{ display:'grid', gridTemplateColumns:'2fr 2fr 1fr 1fr 90px 90px',
               padding:'10px 16px', fontSize:11, fontWeight:700, color:C.muted,
               letterSpacing:'0.06em', textTransform:'uppercase',
               borderBottom:`1px solid ${C.border}`, marginTop:8 }}>
-              <span>الاسم</span><span>البريد / الهاتف</span><span>الفعالية</span><span>التاريخ</span><span>الحالة</span>
+              <span>الاسم</span><span>البريد / الهاتف</span><span>الفعالية</span><span>التاريخ</span><span>الحالة</span><span style={{textAlign:'center'}}>التذكرة</span>
             </div>
             {filtered.map((r,i) => {
               const s = STATUS_CONFIG[r.status] || STATUS_CONFIG.pending
               return (
-                <div key={r.id} style={{ display:'grid', gridTemplateColumns:'2fr 2fr 1fr 1fr 100px',
+                <div key={r.id} style={{ display:'grid', gridTemplateColumns:'2fr 2fr 1fr 1fr 90px 90px',
                   padding:'13px 16px', alignItems:'center',
                   borderBottom:`1px solid ${C.border}`, background:C.card,
                   transition:'background 0.12s', cursor:'default' }}
@@ -116,6 +116,17 @@ export default function AttendeesPage() {
                     fontSize:11, fontWeight:600, background:s.bg, color:s.color }}>
                     {s.label}
                   </span>
+                  <div style={{ textAlign:'center' }}>
+                    {(r as any).qr_code ? (
+                      <a href={`/ticket/${(r as any).qr_code}`} target="_blank"
+                        style={{ display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', background:'#FEF0ED', border:'1px solid #F05537', borderRadius:6, color:'#F05537', fontSize:11, fontWeight:700, textDecoration:'none' }}
+                        onClick={e => e.stopPropagation()}>
+                        🎫 تذكرة
+                      </a>
+                    ) : (
+                      <span style={{ fontSize:11, color:'#DBDAE3' }}>—</span>
+                    )}
+                  </div>
                 </div>
               )
             })}
