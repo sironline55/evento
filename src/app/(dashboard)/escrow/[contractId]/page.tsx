@@ -1,4 +1,7 @@
 'use client'
+async function triggerWhatsApp(type: string, userId: string, phone: string, data: any, refId?: string) {
+  try { await fetch('/api/whatsapp/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({type,userId,phone,data,referenceId:refId}) }) } catch {}
+}
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
@@ -122,6 +125,11 @@ export default function EscrowPaymentPage() {
     })
 
     if (!escrowErr) {
+      // 🔔 WhatsApp: notify influencer payment is held
+      triggerWhatsApp('inf_payment_held', contract.influencer_id, '+966500000000', {
+        name: influencer?.display_name_ar || 'مؤثر',
+        amount: contract.influencer_payout?.toLocaleString('ar-SA'),
+      }, contractId)
       await sb.from('campaign_contracts').update({
         status: 'active',
         start_date: new Date().toISOString().split('T')[0],
