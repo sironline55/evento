@@ -11,6 +11,7 @@ const NAV = [
   { href: '/attendees', label: 'الحضور',      icon: Users      },
   { href: '/analytics', label: 'التقارير',    icon: BarChart2  },
   { href: '/staffing',  label: 'الكوادر',     icon: Briefcase  },
+  { href: '/influencers', label: 'المؤثرون',   icon: Users      },
   { href: '/scanner',   label: 'الماسح',      icon: ScanLine   },
   { href: '/coupons',   label: 'الكوبونات',   icon: Tag        },
 ]
