@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import Pagination from '@/components/ui/Pagination'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 
 const C = {
@@ -153,6 +154,11 @@ export default function AttendeesPage() {
   return (
     <div style={{ minHeight:'100vh', background:C.bg, direction:'rtl', fontFamily:'Tajawal,sans-serif' }}>
 
+      <MobilePageHeader
+        title="الحضور"
+        subtitle={`${filtered.length} مسجل`}
+        action={{ label:'تصدير', onClick:exportCSV, icon:'📥' }}
+      />
       {/* Toast */}
       {toast && (
         <div style={{
@@ -251,6 +257,67 @@ export default function AttendeesPage() {
           </div>
         ) : (
           <>
+            {/* Mobile cards view */}
+            <div className="md:hidden" style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {paginated.map((r, i) => {
+                const s = STATUS_CONFIG[r.status] || STATUS_CONFIG.registered
+                const isSelected = selected.has(r.id)
+                return (
+                  <div key={r.id} onClick={() => toggleSelect(r.id)} style={{
+                    background: isSelected ? '#F0EDFC' : '#fff',
+                    border: `1.5px solid ${isSelected ? '#7B4FBF' : C.border}`,
+                    borderRadius: 14, padding: '14px 16px',
+                    transition: 'all .15s', cursor: 'pointer'
+                  }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+                      <div style={{ flex:1 }}>
+                        <p style={{ fontSize:15, fontWeight:700, color:C.navy, margin:'0 0 3px' }}>{r.guest_name || '—'}</p>
+                        {r.guest_email && <p style={{ fontSize:12, color:C.muted, margin:0 }}>{r.guest_email}</p>}
+                        {r.guest_phone && (
+                          <a href={`https://wa.me/${r.guest_phone.replace(/\D/g,'')}`}
+                            onClick={e => e.stopPropagation()}
+                            style={{ fontSize:12, color:'#25D366', display:'block', marginTop:2 }}>
+                            📱 {r.guest_phone}
+                          </a>
+                        )}
+                      </div>
+                      <span style={{ fontSize:11, padding:'4px 10px', background:s.bg, color:s.color, borderRadius:20, fontWeight:700, whiteSpace:'nowrap', marginRight:8 }}>
+                        {s.label}
+                      </span>
+                    </div>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                      <div>
+                        {(r.events as any)?.title && (
+                          <p style={{ fontSize:11, color:C.muted, margin:0 }}>
+                            🎪 {(r.events as any).title}
+                          </p>
+                        )}
+                        <p style={{ fontSize:11, color:C.muted, margin:'2px 0 0' }}>
+                          {r.created_at ? new Date(r.created_at).toLocaleDateString('ar-SA') : ''}
+                        </p>
+                      </div>
+                      <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                        {r.status === 'waitlisted' && (
+                          <button onClick={e => { e.stopPropagation(); promoteWaitlisted(r.id) }}
+                            style={{ padding:'5px 10px', background:'#EAF7E0', color:'#166534', border:'1px solid #9DE07B', borderRadius:8, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                            ترقية ↑
+                          </button>
+                        )}
+                        {r.qr_code && (
+                          <a href={`/ticket/${r.qr_code}`} target="_blank" onClick={e => e.stopPropagation()}
+                            style={{ padding:'6px 12px', background:'#FEF0ED', border:'1px solid #F05537', borderRadius:8, color:'#F05537', fontSize:12, fontWeight:700, textDecoration:'none' }}>
+                            🎫 تذكرة
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop table view */}
+            <div className="hidden md:block">
             {/* Table header */}
             <div style={{ display:'grid', gridTemplateColumns:'36px 2fr 2fr 1.5fr 1fr 100px 90px',
               padding:'10px 14px', fontSize:11, fontWeight:700, color:C.muted,
@@ -328,6 +395,7 @@ export default function AttendeesPage() {
             })}
           </>
         )}
+            </div>{/* end desktop table */}
         {/* Pagination */}
         <Pagination total={filtered.length} page={page} perPage={PER_PAGE} onPage={setPage}/>
       </div>
