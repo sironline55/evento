@@ -317,7 +317,7 @@ export default function AttendeesPage() {
             </div>
 
             {/* Desktop table view */}
-            {/* Table header */
+            {/* Table header */}
             <div style={{ display:'grid', gridTemplateColumns:'36px 2fr 2fr 1.5fr 1fr 100px 90px',
               padding:'10px 14px', fontSize:11, fontWeight:700, color:C.muted,
               textTransform:'uppercase', borderBottom:`1px solid ${C.border}`, marginTop:8 }}>
