@@ -108,6 +108,31 @@ function EventsPageInner() {
     { id:'draft',    label:'📝 المسودات', count:counts.draft },
   ]
 
+
+  async function duplicateEvent(ev: any, e: React.MouseEvent) {
+    e.preventDefault(); e.stopPropagation()
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user) return
+    const { data: org } = await sb.from('organizations').select('id').eq('owner_id', user.id).single()
+    if (!org) return
+    const newTitle = `نسخة من ${ev.title}`
+    const { error } = await sb.from('events').insert({
+      title: newTitle, description: ev.description,
+      location: ev.location, capacity: ev.capacity,
+      price_from: ev.price_from, category_icon: ev.category_icon,
+      is_public: false, status: 'draft',
+      org_id: org.id, created_by: user.id,
+      start_date: ev.start_date, end_date: ev.end_date,
+      cancellation_policy: ev.cancellation_policy,
+      waitlist_enabled: ev.waitlist_enabled,
+    })
+    if (!error) {
+      window.location.reload()
+    } else {
+      alert('خطأ في النسخ: ' + error.message)
+    }
+  }
+
   return (
     <div style={{ minHeight:'100vh', background:C.bg, direction:'rtl' }}>
 
