@@ -87,7 +87,7 @@ export default function Sidebar() {
         padding: '8px 14px', fontSize: 10,
         color: 'rgba(255,255,255,0.3)', textAlign: 'center',
       }}>
-        v1.2.7 BETA
+        v1.2.9 BETA
       </div>
     </div>
   )
