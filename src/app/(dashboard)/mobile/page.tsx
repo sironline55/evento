@@ -216,5 +216,7 @@ export default function MobileHomePage() {
 
         {/* Bottom spacer for nav */}
         <div style={{ height:80 }}/>
-    )
+      </div>
+    </div>
+  )
 }
