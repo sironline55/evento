@@ -131,7 +131,7 @@ export default function TicketPage() {
       organizationName: org?.name || 'EventVMS',
       description: event?.name || 'تذكرة فعالية',
       generic: {
-        primaryFields: [{ key:'event', label:'الفعالية', value: event?.name || '' }],
+        primaryFields: [{ key:'event', label:'الفعالية', value: event?.title || '' }],
         secondaryFields: [
           { key:'date', label:'التاريخ', value: event?.start_date || '' },
           { key:'location', label:'الموقع', value: event?.location || '' }
@@ -235,7 +235,7 @@ export default function TicketPage() {
                   {org?.name || 'EventVMS'}
                 </div>
                 <h1 style={{ fontSize:22, fontWeight:900, color:'#fff', margin:0, lineHeight:1.3, maxWidth:320 }}>
-                  {event?.name || 'فعالية'}
+                  {event?.title || 'فعالية'}
                 </h1>
               </div>
               {/* EventVMS brand */}
@@ -251,7 +251,7 @@ export default function TicketPage() {
                 { icon:'📅', label:'التاريخ', value: eventDate },
                 { icon:'🕐', label:'الوقت', value: eventTime },
                 { icon:'📍', label:'الموقع', value: event?.location || '—' },
-                { icon:'🎭', label:'نوع الفعالية', value: event?.category || event?.event_type || '—' },
+                { icon:'🎭', label:'نوع الفعالية', value: event?.category || '—' },
               ].map(d => (
                 <div key={d.label} style={{ background:'rgba(255,255,255,.07)', borderRadius:10, padding:'12px 14px' }}>
                   <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginBottom:4 }}>{d.icon} {d.label}</div>
@@ -264,9 +264,9 @@ export default function TicketPage() {
             <div style={{ background:'rgba(255,255,255,.07)', borderRadius:10, padding:'12px 16px', marginBottom:20, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
               <div>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginBottom:3 }}>👤 اسم الحضور</div>
-                <div style={{ fontSize:15, fontWeight:800, color:'#fff' }}>{reg?.attendee_name || reg?.full_name || 'الحضور الكريم'}</div>
-                {(reg?.attendee_email || reg?.email) && (
-                  <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginTop:2 }}>{reg?.attendee_email || reg?.email}</div>
+                <div style={{ fontSize:15, fontWeight:800, color:'#fff' }}>{reg?.guest_name || reg?.attendee_name || 'الحضور الكريم'}</div>
+                {(reg?.guest_email || reg?.attendee_email) && (
+                  <div style={{ fontSize:11, color:'rgba(255,255,255,.5)', marginTop:2 }}>{reg?.guest_email || reg?.attendee_email}</div>
                 )}
               </div>
               {(event?.price || event?.price_from) > 0 ? (
@@ -301,10 +301,10 @@ export default function TicketPage() {
                   • للدعم: support@eventvms.com
                 </div>
                 {/* Status badge */}
-                <div style={{ marginTop:12, display:'inline-flex', alignItems:'center', gap:6, background: reg?.status === 'checked_in' ? 'rgba(58,125,10,.3)' : 'rgba(240,85,55,.2)', border:`1px solid ${reg?.status === 'checked_in' ? 'rgba(58,125,10,.5)' : 'rgba(240,85,55,.4)'}`, borderRadius:20, padding:'4px 12px' }}>
+                <div style={{ marginTop:12, display:'inline-flex', alignItems:'center', gap:6, background: reg?.status === 'attended' ? 'rgba(58,125,10,.3)' : 'rgba(240,85,55,.2)', border:`1px solid ${reg?.status === 'attended' ? 'rgba(58,125,10,.5)' : 'rgba(240,85,55,.4)'}`, borderRadius:20, padding:'4px 12px' }}>
                   <span style={{ fontSize:8 }}>●</span>
-                  <span style={{ fontSize:11, fontWeight:700, color: reg?.status === 'checked_in' ? '#7FD97F' : accentColor }}>
-                    {reg?.status === 'checked_in' ? 'تم الدخول' : 'مؤكدة — جاهزة للدخول'}
+                  <span style={{ fontSize:11, fontWeight:700, color: reg?.status === 'attended' ? '#7FD97F' : accentColor }}>
+                    {reg?.status === 'attended' ? 'تم الحضور' : 'مؤكدة — جاهزة للدخول'}
                   </span>
                 </div>
               </div>
