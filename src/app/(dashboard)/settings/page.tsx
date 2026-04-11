@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import React, { useEffect, useState, useMemo, CSSProperties } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -211,6 +212,7 @@ export default function SettingsPage() {
   // ── CREATE ORG ──────────────────────────────────────────────────────────────
   if (!org) return (
     <div style={{minHeight:'100vh',background:C.bg,direction:'rtl',padding:'40px 24px'}}>
+      <MobilePageHeader title="الإعدادات" />
       <div style={{maxWidth:520,margin:'0 auto'}}>
         <h1 style={{fontSize:24,fontWeight:800,color:C.navy,margin:'0 0 6px'}}>إنشاء منظمتك</h1>
         <p style={{color:C.muted,fontSize:13,margin:'0 0 24px'}}>أنشئ منظمتك الأولى لبدء إدارة الفعاليات</p>
