@@ -249,7 +249,7 @@ export default function OrgCatalogClient({ org, upcoming, past }: {
               )}
               {org.social_twitter && (
                 <a href={`https://x.com/${org.social_twitter}`} target="_blank" rel="noopener"
-                  style={{ width:34, height:34, background:'#000', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', fontSize:16, color:'#fff', fontWeight:700, fontSize:12 }}>X</a>
+                  style={{ width:34, height:34, background:'#000', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', color:'#fff', fontWeight:700, fontSize:12 }}>X</a>
               )}
             </div>
           </div>
