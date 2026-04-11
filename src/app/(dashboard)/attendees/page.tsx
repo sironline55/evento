@@ -11,7 +11,8 @@ const C = {
 }
 
 const STATUS_CONFIG: Record<string,{label:string;bg:string;color:string}> = {
-  pending:   {label:'قيد الانتظار', bg:'#FFF8E8', color:'#B07000'},
+  pending:    {label:'قيد الانتظار', bg:'#FFF8E8', color:'#B07000'},
+  waitlisted: {label:'قائمة الانتظار', bg:'#E6F1FB', color:'#185FA5'},
   confirmed: {label:'مؤكد',         bg:'#E8F8F0', color:'#1A7A4A'},
   attended:  {label:'حضر',          bg:'#E8F0F8', color:'#1A4A7A'},
   cancelled: {label:'ملغي',         bg:'#FEF2F2', color:'#DC2626'},
@@ -52,7 +53,7 @@ export default function AttendeesPage() {
         </div>
         {/* Tabs */}
         <div style={{ display:'flex' }}>
-          {[['all','الكل'],['pending','قيد الانتظار'],['confirmed','مؤكد'],['attended','حضر'],['cancelled','ملغي']].map(([v,l])=>(
+          {[['all','الكل'],['waitlisted','قائمة الانتظار'],['pending','قيد الانتظار'],['confirmed','مؤكد'],['attended','حضر'],['cancelled','ملغي']].map(([v,l])=>(
             <button key={v} onClick={()=>setFilter(v)} style={{
               padding:'10px 18px', background:'none', border:'none', cursor:'pointer', fontSize:13,
               fontWeight:filter===v?700:400,
