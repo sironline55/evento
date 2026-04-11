@@ -16,7 +16,7 @@ export default function TicketPage() {
 
   useEffect(()=>{
     if(!id) return
-    sb.from('registrations').select('*,events(title,start_date,end_date,location,location_type,cover_image,category)').eq('id',id).single()
+    sb.from('registrations').select('*,events(title,start_date,end_date,location,location_type,cover_image,category)').eq('qr_code',id).maybeSingle()
       .then(({data})=>{ setReg(data); setLoading(false) })
   },[id])
 
