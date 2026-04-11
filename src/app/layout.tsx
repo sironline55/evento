@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 import type { Metadata } from "next"
+import { ToastProvider } from '@/components/ui/Toast'
 import { Tajawal } from "next/font/google"
 import "./globals.css"
 
@@ -21,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={`${tajawal.variable} h-full`}>
       <body className="min-h-full flex flex-col" style={{ fontFamily: "var(--font-tajawal), 'Tajawal', Arial, sans-serif" }}>
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   )
