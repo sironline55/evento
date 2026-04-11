@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, CSSProperties } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 
@@ -8,17 +8,17 @@ const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
   muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF', green:'#3A7D0A', red:'#DC2626'
 }
-const inp: React.CSSProperties = {
+const inp: CSSProperties = {
   width:'100%', padding:'10px 14px', border:`1px solid ${C.border}`, borderRadius:8,
   fontSize:14, outline:'none', fontFamily:'inherit', color:C.text,
   background:C.card, boxSizing:'border-box'
 }
-const lbl: React.CSSProperties = { fontSize:12, fontWeight:600, color:C.text, display:'block', marginBottom:6 }
-const section: React.CSSProperties = {
+const lbl: CSSProperties = { fontSize:12, fontWeight:600, color:C.text, display:'block', marginBottom:6 }
+const section: CSSProperties = {
   background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:24, marginBottom:16
 }
-const sectionTitle: React.CSSProperties = { fontSize:15, fontWeight:800, color:C.navy, margin:'0 0 4px' }
-const sectionSub: React.CSSProperties = { fontSize:12, color:C.muted, margin:'0 0 20px' }
+const sectionTitle: CSSProperties = { fontSize:15, fontWeight:800, color:C.navy, margin:'0 0 4px' }
+const sectionSub: CSSProperties = { fontSize:12, color:C.muted, margin:'0 0 20px' }
 
 const CITIES = ['الرياض','جدة','الدمام','مكة المكرمة','المدينة المنورة','الخبر','تبوك','أبها']
 const INDUSTRIES = ['فعاليات وترفيه','تعليم وتدريب','أعمال ومؤتمرات','رياضة ونشاط','ثقافة وفنون','صحة وطب','حكومة وقطاع عام','أخرى']
@@ -98,7 +98,7 @@ export default function SettingsPage() {
   const [inviteOk, setInviteOk]       = useState(false)
 
   useEffect(() => {
-    sb.auth.getUser().then(async ({ data }) => {
+    sb.auth.getUser().then(async ({ data }: { data: any }) => {
       if (!data.user) { router.push('/login'); return }
       setUser(data.user)
 
