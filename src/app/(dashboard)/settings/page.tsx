@@ -75,12 +75,12 @@ export default function SettingsPage() {
       setUser(data.user)
       // Load org where user is owner or member
       const { data: memberOf } = await sb.from('org_members')
-        .select('org_id').eq('user_id', data.user.id).limit(1).single()
+        .select('org_id').eq('user_id', data.user.id).limit(1).maybeSingle()
       let orgId = memberOf?.org_id
       if (!orgId) {
         // Check if owner
         const { data: owned } = await sb.from('organizations')
-          .select('id').eq('owner_id', data.user.id).limit(1).single()
+          .select('id').eq('owner_id', data.user.id).limit(1).maybeSingle()
         orgId = owned?.id
       }
       if (orgId) {
