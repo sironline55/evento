@@ -333,5 +333,6 @@ export default function EventsPage() {
     <Suspense fallback={<div style={{padding:40,textAlign:'center',color:'#666'}}>جاري التحميل...</div>}>
       <EventsPageInner />
     </Suspense>
+    </div>
   )
 }
