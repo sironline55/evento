@@ -73,22 +73,46 @@ export default function SettingsPage() {
     sb.auth.getUser().then(async ({ data }) => {
       if (!data.user) return
       setUser(data.user)
-      // Load org where user is owner or member
-      const { data: memberOf } = await sb.from('org_members')
-        .select('org_id').eq('user_id', data.user.id).limit(1).maybeSingle()
-      let orgId = memberOf?.org_id
-      if (!orgId) {
-        // Check if owner
-        const { data: owned } = await sb.from('organizations')
-          .select('id').eq('owner_id', data.user.id).limit(1).maybeSingle()
-        orgId = owned?.id
+      // Load org — direct fetch with session token (avoids Supabase client RLS issues)
+      const SB_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!
+      const SB_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      const sessionStr = localStorage.getItem('sb-xqpcjsbcjwqlxfssmtjb-auth-token')
+      const sessionData = sessionStr ? JSON.parse(sessionStr) : null
+      const accessToken = sessionData?.access_token || SB_ANON
+
+      const headers: Record<string,string> = {
+        apikey: SB_ANON,
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json',
       }
-      if (orgId) {
-        const { data: o } = await sb.from('organizations').select('*').eq('id', orgId).single()
-        if (o) {
-          setOrg(o)
-          const hasIdentity = o.features?.org_identity === true
-          if (!hasIdentity && tab === 'identity') setTab('org')
+
+      // Try owner_id first (fastest path)
+      const orgByOwner = await fetch(
+        `${SB_URL}/rest/v1/organizations?select=*&owner_id=eq.${data.user.id}&limit=1`,
+        { headers }
+      ).then(r => r.json()).then((d: any[]) => d[0] || null).catch(() => null)
+
+      // Fallback to org_members
+      let o: any = orgByOwner
+      if (!o) {
+        const memberRow = await fetch(
+          `${SB_URL}/rest/v1/org_members?select=org_id&user_id=eq.${data.user.id}&status=eq.active&limit=1`,
+          { headers }
+        ).then(r => r.json()).then((d: any[]) => d[0] || null).catch(() => null)
+
+        if (memberRow?.org_id) {
+          o = await fetch(
+            `${SB_URL}/rest/v1/organizations?select=*&id=eq.${memberRow.org_id}&limit=1`,
+            { headers }
+          ).then(r => r.json()).then((d: any[]) => d[0] || null).catch(() => null)
+        }
+      }
+
+      const orgId = o?.id
+      if (o) {
+        setOrg(o)
+        const hasIdentity = o.features?.org_identity === true
+        if (!hasIdentity && tab === 'identity') setTab('org')
           setEditOrg({ name:o.name||'', name_ar:o.name_ar||'', email:o.email||'', phone:o.phone||'', website:o.website||'', city:o.city||'', industry:o.industry||'', description:o.description||'', logo_url:o.logo_url||'', cover_image:o.cover_image||'', slug:o.slug||'', tagline:o.tagline||'', accent_color:o.accent_color||'#F05537', social_instagram:o.social_instagram||'', social_twitter:o.social_twitter||'', social_whatsapp:o.social_whatsapp||'', social_tiktok:(o as any).social_tiktok||'', social_snapchat:(o as any).social_snapchat||'', social_linkedin:(o as any).social_linkedin||'', custom_domain:o.custom_domain||'', license_number:(o as any).license_number||'', vat_number:(o as any).vat_number||'' })
           const [{ data: mems }, { data: presets }] = await Promise.all([
             sb.from('org_members').select('*').eq('org_id', orgId).order('created_at'),
