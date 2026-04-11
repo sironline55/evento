@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 const C = { navy:'#1E0A3C', orange:'#F05537', muted:'#6F7287', border:'#DBDAE3', card:'#FFFFFF' }
 
@@ -77,6 +78,7 @@ export default function RefundRequestsPage() {
 
   return (
     <div style={{ direction:'rtl', fontFamily:'Tajawal,sans-serif', padding:'24px 20px', maxWidth:960, margin:'0 auto' }}>
+      <MobilePageHeader title="الاسترداد" />
 
       {/* Header */}
       <div style={{ marginBottom:24 }}>
