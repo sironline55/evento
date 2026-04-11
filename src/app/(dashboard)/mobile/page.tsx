@@ -218,5 +218,8 @@ export default function MobileHomePage() {
         <div style={{ height:80 }}/>
       </div>
     </div>
+    </div>
+    </div>
+    </div>
   )
 }
