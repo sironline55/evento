@@ -21,6 +21,7 @@ const NAV = [
 const BOTTOM_NAV = [
   { href: '/notifications', label: 'الإشعارات', icon: Bell      },
   { href: '/reminders',    label: 'التذكيرات',    icon: Bell       },
+  { href: '/affiliate',   label: 'روابط الإحالة', icon: Tag        },
   { href: '/settings', label: 'الإعدادات',   icon: Settings   },
   { href: '/billing',  label: 'المالية',      icon: CreditCard },
   { href: '/accounts', label: 'الحسابات',     icon: Building2  },
