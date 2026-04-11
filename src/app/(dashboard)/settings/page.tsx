@@ -671,7 +671,7 @@ export default function SettingsPage() {
 
         {/* ── IDENTITY TAB ────────────────────────────────────────── */}
         {tab==='identity' && (() => {
-          const hasFeature = org?.features?.org_identity === true
+          const hasFeature = true // All features unlocked — managed via Super Admin
 
           /* Feature gate — not enabled on this plan */
           if (!hasFeature) return (
