@@ -63,11 +63,10 @@ export default function MobileNav() {
   return (
     <>
       {/* Bottom spacer so content doesn't hide behind nav */}
-      <div style={{ height: 72 }} className="md:hidden" />
+      <div style={{ height: 72 }} />
 
       <nav
-        className="md:hidden"
-        style={{
+          style={{
           position:   'fixed',
           bottom:     0,
           left:       0,
