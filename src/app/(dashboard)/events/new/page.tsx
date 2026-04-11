@@ -195,6 +195,12 @@ export default function NewEventPage() {
   const [visibility, setVisibility] = useState<'public'|'private'>('public')
   const [status, setStatus]         = useState<'draft'|'published'>('draft')
 
+  // Cancellation policy
+  const [cancelPolicy, setCancelPolicy]   = useState<'no_refund'|'full_refund'|'partial_refund'|'custom'>('no_refund')
+  const [cancelDays, setCancelDays]       = useState('')
+  const [refundPct, setRefundPct]         = useState('100')
+  const [cancelNotes, setCancelNotes]     = useState('')
+
   // ✅ FIX 2: Use shared sb instance — no new client inside functions
   async function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return
@@ -286,6 +292,10 @@ export default function NewEventPage() {
         highlights:       highlights  || null,
         status,
         is_public:        visibility === 'public',
+        cancellation_policy:      cancelPolicy,
+        cancellation_days_before: cancelDays ? parseInt(cancelDays) : 0,
+        refund_percentage:        cancelPolicy === 'partial_refund' ? (parseInt(refundPct)||0) : cancelPolicy === 'full_refund' ? 100 : 0,
+        cancellation_notes:       cancelNotes || null,
         created_by:       user?.id ?? null,
       }).select('id')           // ✅ no .single() — returns array
 
@@ -667,6 +677,79 @@ export default function NewEventPage() {
               <button onClick={addTicket} style={{width:'100%',padding:'12px',border:`2px dashed ${C.border}`,borderRadius:10,background:'none',cursor:'pointer',color:C.orange,fontWeight:700,fontSize:14}}>
                 + إضافة نوع تذكرة آخر
               </button>
+
+              {/* ── CANCELLATION POLICY ── */}
+              <div style={{...card,marginTop:16}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                  <span style={{fontSize:18}}>🔄</span>
+                  <p style={{fontSize:15,fontWeight:700,color:C.navy,margin:0}}>سياسة الإلغاء والاسترداد</p>
+                </div>
+                <p style={{fontSize:12,color:C.muted,margin:'0 0 14px'}}>حدد شروط الإلغاء واسترداد المبلغ — تظهر للمتسجل قبل إتمام التسجيل</p>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
+                  {[
+                    ['no_refund',     '🚫 لا يوجد استرداد',           'لا يحق للمتسجل استرداد أي مبلغ بعد التسجيل'],
+                    ['full_refund',   '✅ استرداد كامل',               'يحق له استرداد كامل المبلغ'],
+                    ['partial_refund','⚡ استرداد جزئي',               'استرداد نسبة محددة من المبلغ'],
+                    ['custom',        '📝 شروط مخصصة',                'اكتب شروطك الخاصة'],
+                  ].map(([v,title,desc])=>(
+                    <div key={v} onClick={()=>setCancelPolicy(v as any)} style={{
+                      padding:'12px',borderRadius:10,cursor:'pointer',
+                      border:`2px solid ${cancelPolicy===v?C.orange:C.border}`,
+                      background:cancelPolicy===v?'#FEF0ED':C.card,
+                      transition:'all 0.15s',
+                    }}>
+                      <p style={{fontWeight:700,color:cancelPolicy===v?C.orange:C.text,margin:'0 0 3px',fontSize:13}}>{title}</p>
+                      <p style={{fontSize:11,color:C.muted,margin:0}}>{desc}</p>
+                    </div>
+                  ))}
+                </div>
+                {cancelPolicy !== 'no_refund' && cancelPolicy !== 'custom' && (
+                  <div style={{padding:12,background:'#F8F7FA',borderRadius:10,border:`1px solid ${C.border}`,marginBottom:12}}>
+                    <label style={lbl}>المهلة الزمنية للإلغاء</label>
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+                      <input type="number" value={cancelDays} onChange={e=>setCancelDays(e.target.value)} placeholder="0" min="0" style={{...inp,maxWidth:100}}/>
+                      <span style={{fontSize:13,color:C.muted}}>يوم قبل الفعالية</span>
+                    </div>
+                    {cancelPolicy === 'partial_refund' && (
+                      <div>
+                        <label style={lbl}>نسبة الاسترداد</label>
+                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                          <input type="number" value={refundPct} onChange={e=>setRefundPct(e.target.value)} placeholder="50" min="1" max="99" style={{...inp,maxWidth:100}}/>
+                          <span style={{fontSize:13,color:C.muted}}>% من قيمة التذكرة</span>
+                          {refundPct && <span style={{fontSize:12,fontWeight:700,color:C.green}}>✓ استرداد {refundPct}%</span>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {(cancelPolicy !== 'no_refund') && (
+                  <div>
+                    <label style={lbl}>ملاحظات إضافية <span style={{color:C.muted,fontWeight:400}}>(اختياري)</span></label>
+                    <textarea value={cancelNotes} onChange={e=>setCancelNotes(e.target.value)}
+                      placeholder={cancelPolicy==='custom'?'اكتب شروط الإلغاء الخاصة بك...':'أي تفاصيل إضافية تريد إبلاغ المتسجلين بها...'} rows={3}
+                      style={{...inp,resize:'vertical'}}/>
+                  </div>
+                )}
+                {/* Policy preview badge */}
+                <div style={{marginTop:12,padding:'8px 12px',background:
+                  cancelPolicy==='no_refund'?'#FEE2E2':
+                  cancelPolicy==='full_refund'?'#DCFCE7':
+                  cancelPolicy==='partial_refund'?'#FEF3C7':'#EFF6FF',
+                  borderRadius:8,display:'flex',alignItems:'center',gap:8}}>
+                  <span style={{fontSize:16}}>
+                    {cancelPolicy==='no_refund'?'🚫':cancelPolicy==='full_refund'?'✅':cancelPolicy==='partial_refund'?'⚡':'📝'}
+                  </span>
+                  <span style={{fontSize:12,fontWeight:600,color:
+                    cancelPolicy==='no_refund'?'#991B1B':
+                    cancelPolicy==='full_refund'?'#166534':
+                    cancelPolicy==='partial_refund'?'#92400E':'#1D4ED8'}}>
+                    {cancelPolicy==='no_refund'     && 'التسجيل نهائي ولا يمكن استرداد المبلغ'}
+                    {cancelPolicy==='full_refund'    && `يحق الإلغاء واسترداد كامل المبلغ${cancelDays?' قبل '+cancelDays+' يوم من الفعالية':''}`}
+                    {cancelPolicy==='partial_refund' && `الإلغاء يُعيد ${refundPct||'—'}% من المبلغ${cancelDays?' قبل '+cancelDays+' يوم':''}`}
+                    {cancelPolicy==='custom'         && (cancelNotes||'سيتم عرض شروطك المخصصة للمتسجلين')}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
 
@@ -686,6 +769,11 @@ export default function NewEventPage() {
                   ['📍 الموقع',   locationType==='online'?'عبر الإنترنت':locationType==='tba'?'يُعلَن لاحقاً':location||'—'],
                   ['🏷️ التصنيف', [category,subcategory].filter(Boolean).join(' · ')||'—'],
                   ['🖼️ الصورة',  coverUrl?'✅ تم الرفع':'—'],
+                  ['🔄 الإلغاء',
+                    cancelPolicy==='no_refund'     ? '🚫 لا يوجد استرداد' :
+                    cancelPolicy==='full_refund'   ? `✅ استرداد كامل${cancelDays?' — قبل '+cancelDays+' يوم':''}` :
+                    cancelPolicy==='partial_refund'? `⚡ ${refundPct}% استرداد${cancelDays?' — قبل '+cancelDays+' يوم':''}` :
+                    '📝 شروط مخصصة'],
                   ['🎟 التذاكر',  tickets.map(t=>`${t.name||'بدون اسم'} (${t.type==='free'?'مجاني':t.price+' ر.س'})`).join('، ')],
                   ['👥 الطاقة',   capacity||'غير محدودة'],
                   ['📋 الجدول',   agenda.length?`${agenda.length} جلسات`:'—'],
