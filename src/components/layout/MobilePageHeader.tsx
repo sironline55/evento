@@ -17,7 +17,6 @@ export default function MobilePageHeader({ title, subtitle, back, action, color 
 
   return (
     <div
-      className="md:hidden"
       style={{
         position: 'sticky', top: 0, zIndex: 50,
         background: color,
