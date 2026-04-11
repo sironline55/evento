@@ -34,7 +34,8 @@ export default function InfluencerPortal() {
   const [proposalForm, setProposalForm] = useState({ message:'', proposed_price:'', estimated_days:'3' })
   const [saving, setSaving] = useState(false)
   const [registerMode, setRegisterMode] = useState(false)
-  const [regForm, setRegForm] = useState({ display_name:'', display_name_ar:'', bio_ar:'', tiktok_handle:'', tiktok_followers:'', instagram_handle:'', instagram_followers:'', snapchat_handle:'', snapchat_followers:'', price_basic:'', price_standard:'', price_premium:'', specializations:[] as string[] })
+  const [regForm, setRegForm] = useState({ display_name:'', display_name_ar:'', bio_ar:'', avatar_url:'', tiktok_handle:'', tiktok_followers:'', instagram_handle:'', instagram_followers:'', snapchat_handle:'', snapchat_followers:'', price_basic:'', price_standard:'', price_premium:'', specializations:[] as string[] })
+  const [avatarMode, setAvatarMode] = useState<'url'|'default'>('default')
 
   useEffect(() => {
     sb.auth.getUser().then(async ({ data }) => {
@@ -69,6 +70,7 @@ export default function InfluencerPortal() {
       display_name: regForm.display_name,
       display_name_ar: regForm.display_name_ar,
       bio_ar: regForm.bio_ar,
+      avatar_url: avatarMode==='url' && regForm.avatar_url ? regForm.avatar_url : null,
       tiktok_handle: regForm.tiktok_handle || null,
       tiktok_followers: parseInt(regForm.tiktok_followers) || 0,
       instagram_handle: regForm.instagram_handle || null,
@@ -117,6 +119,29 @@ export default function InfluencerPortal() {
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
           <div><label style={lbl}>الاسم بالإنجليزية *</label><input value={regForm.display_name} onChange={e => setRegForm(f=>({...f,display_name:e.target.value}))} style={inp}/></div>
           <div><label style={lbl}>الاسم بالعربية *</label><input value={regForm.display_name_ar} onChange={e => setRegForm(f=>({...f,display_name_ar:e.target.value}))} style={inp}/></div>
+        </div>
+        <div style={{ background:'#F8F7FA', borderRadius:10, padding:'14px', border:'1px solid '+C.border }}>
+          <label style={{...lbl, marginBottom:8}}>🖼️ صورة الملف الشخصي</label>
+          <div style={{ display:'flex', gap:8, marginBottom:8 }}>
+            {[['default','صورة افتراضية للأحرف'],['url','رابط صورة مخصص']].map(([v,l]) => (
+              <button key={v} onClick={() => setAvatarMode(v as any)} type="button" style={{
+                flex:1, padding:'7px', borderRadius:8, cursor:'pointer', fontFamily:'inherit', fontSize:12, fontWeight:600,
+                border: avatarMode===v ? '2px solid '+C.orange : '1px solid '+C.border,
+                background: avatarMode===v ? '#FEF0ED' : C.card, color: avatarMode===v ? C.orange : C.text
+              }}>{l}</button>
+            ))}
+          </div>
+          {avatarMode==='url' && (
+            <input value={regForm.avatar_url} onChange={e => setRegForm(f=>({...f,avatar_url:e.target.value}))}
+              placeholder="https://example.com/my-photo.jpg" style={inp}/>
+          )}
+          {avatarMode==='url' && regForm.avatar_url && (
+            <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:10 }}>
+              <img src={regForm.avatar_url} alt="preview" style={{ width:48, height:48, borderRadius:'50%', objectFit:'cover', border:'2px solid '+C.border }} onError={e => (e.currentTarget.style.display='none')}/>
+              <span style={{ fontSize:11, color:C.green, fontWeight:600 }}>معاينة الصورة</span>
+            </div>
+          )}
+          {avatarMode==='default' && <p style={{ fontSize:11, color:C.muted, margin:'4px 0 0' }}>سيتم استخدام أول حرف من اسمك كصورة — يمكنك تغييرها لاحقاً من الإعدادات</p>}
         </div>
         <div><label style={lbl}>نبذة عنك</label><textarea value={regForm.bio_ar} onChange={e => setRegForm(f=>({...f,bio_ar:e.target.value}))} rows={3} style={{...inp,resize:'vertical'}} placeholder="تخصصك وتجاربك في الفعاليات..."/></div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
