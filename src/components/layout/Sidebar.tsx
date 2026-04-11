@@ -21,6 +21,7 @@ const BOTTOM_NAV = [
   { href: '/settings', label: 'الإعدادات',   icon: Settings   },
   { href: '/billing',  label: 'المالية',      icon: CreditCard },
   { href: '/accounts', label: 'الحسابات',     icon: Building2  },
+  { href: '/influencers-admin', label: 'مراجعة المؤثرين', icon: Users      },
 ]
 
 const NAVY   = '#1E0A3C'
