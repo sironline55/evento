@@ -114,6 +114,23 @@ export default function RegistrationPage() {
         await sb.from('coupons').update({ used_count: coupon.used_count + 1 }).eq('id', coupon.id)
       }
       setTicketCode(data.qr_code)
+
+      // Send confirmation email (mock if no Resend key)
+      if (form.guest_email) {
+        fetch('/api/tickets/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: form.guest_email,
+            name: form.guest_name,
+            eventName: ev.title,
+            eventDate: ev.start_date ? new Date(ev.start_date).toLocaleDateString('ar-SA', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) : '',
+            eventLocation: ev.location || '',
+            ticketCode: data.qr_code,
+            ticketUrl: `${window.location.origin}/ticket/${data.qr_code}`
+          })
+        }).catch(() => {}) // Non-blocking — don't wait
+      }
       setDone(true)
     } else {
       alert('حدث خطأ: ' + error?.message)
