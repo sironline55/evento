@@ -219,7 +219,7 @@ export default function JobPageClient({ job }: { job: Job }) {
         {/* Share */}
         <div style={{ background:C.card, borderRadius:12, padding:'14px 16px', marginBottom:14, border:`1px solid ${C.border}` }}>
           <p style={{ fontSize:13, fontWeight:600, color:C.navy, margin:'0 0 10px' }}>📢 شارك فرصة العمل</p>
-          <div style={{ display:'flex', gap:8' }}>
+          <div style={{ display:'flex', gap:8 }}>
             <a href={`https://wa.me/?text=${waText}`} target="_blank" rel="noopener"
               style={{ flex:1, padding:'10px', background:'#25D366', borderRadius:8, color:'#fff', fontWeight:700, fontSize:13, textDecoration:'none', textAlign:'center' }}>
               واتساب
