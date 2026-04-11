@@ -248,6 +248,13 @@ export default function TicketPage() {
       <div style={{textAlign:'center',marginTop:20}}>
         <Link href={`/e/${reg.event_id}`} style={{color:'rgba(255,255,255,.5)',fontSize:12,textDecoration:'none'}}>عرض تفاصيل الفعالية</Link>
       </div>
+      {reg.status !== 'cancelled' && (
+        <div style={{textAlign:'center',marginTop:10}}>
+          <Link href={`/refund/${reg.id}`} style={{color:'rgba(255,100,100,.6)',fontSize:11,textDecoration:'none'}}>
+            طلب الإلغاء والاسترداد
+          </Link>
+        </div>
+      )}
 
       <style>{`
         @media print {
