@@ -1,5 +1,4 @@
 'use client'
-export const dynamic = 'force-dynamic'
 import MobilePageHeader from '@/components/layout/MobilePageHeader'
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
@@ -7,6 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line
 } from 'recharts'
+export const dynamic = 'force-dynamic'
 
 const C = { navy:'#1E0A3C', orange:'#F05537', muted:'#6F7287', border:'#DBDAE3', card:'#FFFFFF' }
 const COLORS = ['#F05537','#1E0A3C','#3D1A78','#7B4FBF','#BBBBBB']
