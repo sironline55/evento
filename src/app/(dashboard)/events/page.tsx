@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, Suspense } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
   muted:'#6F7287', border:'#DBDAE3', bg:'#FAFAFA', card:'#FFFFFF'
@@ -135,6 +135,11 @@ function EventsPageInner() {
 
   return (
     <div style={{ minHeight:'100vh', background:C.bg, direction:'rtl' }}>
+      <MobilePageHeader
+        title="الفعاليات"
+        subtitle={`${events.length} فعالية`}
+        action={{ label:'+ جديدة', href:'/events/new' }}
+      />
 
       {/* ── Header ── */}
       <div style={{ background:C.card, borderBottom:`1px solid ${C.border}`, padding:'20px 24px' }}>
