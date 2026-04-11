@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import {
@@ -109,8 +110,9 @@ export default function AnalyticsPage() {
         <p style={{ fontSize:13, color:C.muted, margin:'4px 0 0' }}>{events.length} فعالية · {totalRegs} تسجيل</p>
       </div>
 
+      <MobilePageHeader title="التقارير" subtitle="إحصاءات الفعاليات"/>
       {/* KPI cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:24 }}>
         <StatCard label="إجمالي الفعاليات"  val={events.length}  sub={`${events.filter(e=>e.status==='published').length} نشطة`} />
         <StatCard label="إجمالي التسجيلات" val={totalRegs}       sub={`${totalCancelled} ملغي`} color={C.orange} />
         <StatCard label="معدل الحضور"       val={`${attendanceRate}%`} sub={`${totalAttended} شخص حضر فعلاً`} color={attendanceRate>60?'#166534':'#854F0B'} />
@@ -118,7 +120,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts row 1 */}
-      <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:16, marginBottom:16 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:16, marginBottom:16 }}>
 
         {/* Bar chart - registrations per event */}
         <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:'20px' }}>
@@ -163,7 +165,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts row 2 */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:16, marginBottom:16 }}>
 
         {/* Line chart - registrations over time */}
         <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:'20px' }}>
