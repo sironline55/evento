@@ -20,12 +20,14 @@ const BOTTOM_NAV = [
   { href: '/accounts', label: 'الحسابات',     icon: Building2  },
 ]
 
+const VERSION = 'v1.0.175'
+
 /* Qoyod sidebar palette — using EventVMS navy */
 const S = {
-  bg:         '#1E0A3C',   /* navy brand color */
-  bgHover:    '#2D1550',   /* lighter navy */
-  bgActive:   '#F05537',   /* orange brand = active */
-  text:       '#C4BAD8',   /* soft lavender-white */
+  bg:         '#1E0A3C',
+  bgHover:    '#2D1550',
+  bgActive:   '#F05537',
+  text:       '#C4BAD8',
   textActive: '#FFFFFF',
   divider:    'rgba(255,255,255,0.08)',
   logo:       '#FFFFFF',
@@ -124,13 +126,42 @@ export default function Sidebar() {
 
       {/* Bottom Nav */}
       <div style={{
-        padding: '8px 8px 14px',
+        padding: '8px 8px 10px',
         borderTop: `1px solid ${S.divider}`,
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
       }}>
         {BOTTOM_NAV.map(item => <NavItem key={item.href} {...item} />)}
+
+        {/* Version badge */}
+        <div style={{
+          marginTop: 8,
+          padding: '5px 10px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
+          <span style={{
+            fontSize: 10,
+            color: 'rgba(196,186,216,0.4)',
+            fontFamily: 'monospace',
+            letterSpacing: '0.05em',
+          }}>
+            {VERSION}
+          </span>
+          <span style={{
+            fontSize: 9,
+            background: 'rgba(240,85,55,0.15)',
+            color: '#F05537',
+            padding: '2px 6px',
+            borderRadius: 4,
+            fontWeight: 700,
+            letterSpacing: '0.03em',
+          }}>
+            BETA
+          </span>
+        </div>
       </div>
     </aside>
   )
