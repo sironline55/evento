@@ -127,36 +127,46 @@ function AppsDrawer({ request, onClose }: {request:Request;onClose:()=>void}) {
 }
 
 // ─── New Request Modal (basic) ─────────────────────────────────────────
-function NewRequestModal({ events, onClose, onCreated }: {
-  events:{id:string;title:string}[];onClose:()=>void;onCreated:(r:Request)=>void
+// ─── NewRequestModal ─────────────────────────────────────────────────────────
+function NewRequestModal({ events, onClose, onSaved }: {
+  events:{id:string;title:string}[]
+  onClose:()=>void
+  onSaved:(req:Request)=>void
 }) {
   const sb = useMemo(()=>createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!),[])
   const fileRef = useRef<HTMLInputElement>(null)
-  const [saving, setSaving] = useState(false)
-  const [step, setStep]     = useState<'basic'|'page'>('basic')
+  const [saving, setSaving]             = useState(false)
   const [imageUploading, setImageUploading] = useState(false)
   const [coverPreview, setCoverPreview] = useState<string|null>(null)
   const [coverUrl, setCoverUrl]         = useState('')
-  const [newHighlight, setNewHighlight] = useState('')
-  const [newBenefit, setNewBenefit]     = useState('')
 
+  // Basic fields
   const [form, setForm] = useState({
     title:'', city:'الرياض', event_date:'', role_type:'استقبال',
     workers_needed:'1', daily_rate:'', duration_hours:'8',
     gender_preference:'any', description:'', event_id:'',
-    require_nafath: false,
-    // Public page
-    has_public_page: false,
-    location_name:'', requirements:'', org_name:'',
-    highlights: [] as string[],
-    benefits:   [] as string[],
+    location_name:'', require_nafath:false,
   })
-  const set  = (k:string, v:any) => setForm(f=>({...f,[k]:v}))
-  const addHighlight = () => { if(newHighlight.trim()){set('highlights',[...form.highlights,newHighlight.trim()]);setNewHighlight('')} }
-  const addBenefit   = () => { if(newBenefit.trim()){set('benefits',[...form.benefits,newBenefit.trim()]);setNewBenefit('')} }
+  const set = (k:string, v:any) => setForm(f=>({...f,[k]:v}))
+
+  // Public page toggle
+  const [hasPublicPage, setHasPublicPage] = useState(false)
+
+  // Public page extras
+  const [highlights, setHighlights]   = useState<string[]>([''])
+  const [benefits, setBenefits]       = useState<string[]>([''])
+  const [requirements, setRequirements] = useState('')
+  const [orgName, setOrgName]         = useState('')
+
+  function addHighlight()  { setHighlights(h=>[...h,'']) }
+  function addBenefit()    { setBenefits(b=>[...b,'']) }
+  function updateHL(i:number, v:string) { setHighlights(h=>h.map((x,idx)=>idx===i?v:x)) }
+  function updateBN(i:number, v:string) { setBenefits(b=>b.map((x,idx)=>idx===i?v:x)) }
+  function removeHL(i:number) { setHighlights(h=>h.filter((_,idx)=>idx!==i)) }
+  function removeBN(i:number) { setBenefits(b=>b.filter((_,idx)=>idx!==i)) }
 
   async function handleImage(e:React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]; if(!file) return
+    const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
     reader.onload = ev => setCoverPreview(ev.target?.result as string)
     reader.readAsDataURL(file)
@@ -164,19 +174,24 @@ function NewRequestModal({ events, onClose, onCreated }: {
     try {
       const ext = file.name.split('.').pop()
       const path = `staffing/${Date.now()}.${ext}`
-      const {error} = await sb.storage.from('event-images').upload(path,file,{upsert:true})
-      if(!error){
-        const {data:{publicUrl}} = sb.storage.from('event-images').getPublicUrl(path)
+      const { error } = await sb.storage.from('event-images').upload(path, file, { upsert:true })
+      if (!error) {
+        const { data:{publicUrl} } = sb.storage.from('event-images').getPublicUrl(path)
         setCoverUrl(publicUrl)
       }
     } finally { setImageUploading(false) }
   }
 
   async function save() {
-    if(!form.title.trim()||!form.event_date||!form.daily_rate){alert('يرجى تعبئة الحقول المطلوبة');return}
+    if (!form.title.trim() || !form.event_date || !form.daily_rate) {
+      alert('يرجى تعبئة الحقول المطلوبة'); return
+    }
     setSaving(true)
     try {
-      const {data,error} = await sb.from('staffing_requests').insert({
+      const cleanHL = highlights.filter(h=>h.trim())
+      const cleanBN = benefits.filter(b=>b.trim())
+
+      const { data, error } = await sb.from('staffing_requests').insert({
         title:            form.title.trim(),
         city:             form.city,
         event_date:       form.event_date,
@@ -186,234 +201,248 @@ function NewRequestModal({ events, onClose, onCreated }: {
         duration_hours:   parseInt(form.duration_hours)||8,
         gender_preference: form.gender_preference==='any'?null:form.gender_preference,
         description:      form.description||null,
+        location_name:    form.location_name||null,
         event_id:         form.event_id||null,
+        require_nafath:   form.require_nafath,
         status:           'open',
         workers_confirmed: 0,
-        require_nafath:   form.require_nafath,
-        has_public_page:  form.has_public_page,
+        // Public page fields
+        has_public_page:  hasPublicPage,
         cover_image:      coverUrl||null,
-        location_name:    form.location_name||null,
-        requirements:     form.requirements||null,
-        org_name:         form.org_name||null,
-        highlights:       form.highlights.length?form.highlights:null,
-        benefits:         form.benefits.length?form.benefits:null,
-      }).select('*').single()
-      if(error) throw error
-      onCreated(data as Request)
-    } catch(e:any){alert('خطأ: '+e.message)}
-    finally{setSaving(false)}
+        highlights:       cleanHL.length ? cleanHL : null,
+        benefits:         cleanBN.length ? cleanBN : null,
+        requirements:     requirements.trim()||null,
+        org_name:         orgName.trim()||null,
+        views_count:      0,
+      }).select().single()
+      if (error) throw error
+      onSaved(data as Request)
+    } catch(e:any) { alert('خطأ: '+e.message) }
+    finally { setSaving(false) }
   }
 
   return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:100,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'20px 16px',overflowY:'auto'}} onClick={onClose}>
-      <div style={{background:C.card,borderRadius:16,width:'100%',maxWidth:580,direction:'rtl'}} onClick={e=>e.stopPropagation()}>
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:100,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'16px',overflowY:'auto'}} onClick={onClose}>
+      <div style={{background:C.card,borderRadius:16,width:'100%',maxWidth:580,marginTop:20,marginBottom:20,direction:'rtl'}} onClick={e=>e.stopPropagation()}>
+
         {/* Header */}
-        <div style={{padding:'18px 20px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <h2 style={{margin:0,fontSize:18,fontWeight:800,color:C.navy}}>نشر طلب توظيف</h2>
-          <button onClick={onClose} style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:C.muted}}>✕</button>
+        <div style={{padding:'18px 20px 14px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,background:C.card,borderRadius:'16px 16px 0 0',zIndex:1}}>
+          <h2 style={{margin:0,fontSize:18,fontWeight:800,color:C.navy}}>نشر طلب توظيف جديد</h2>
+          <button onClick={onClose} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:C.muted}}>✕</button>
         </div>
 
-        {/* Tabs */}
-        <div style={{display:'flex',borderBottom:`1px solid ${C.border}`}}>
-          {[['basic','📋 التفاصيل'],['page','🌐 الصفحة العامة']].map(([t,l])=>(
-            <button key={t} onClick={()=>setStep(t as any)} style={{
-              flex:1,padding:'10px',background:'none',border:'none',cursor:'pointer',
-              fontSize:13,fontWeight:step===t?700:400,fontFamily:'inherit',
-              color:step===t?C.orange:C.muted,
-              borderBottom:step===t?`2px solid ${C.orange}`:'2px solid transparent',marginBottom:-1,
-            }}>{l}</button>
-          ))}
-        </div>
+        <div style={{padding:20,maxHeight:'80vh',overflowY:'auto'}}>
 
-        <div style={{padding:20,maxHeight:'70vh',overflowY:'auto'}}>
-          {/* ── BASIC TAB ── */}
-          {step==='basic' && (
-            <div style={{display:'grid',gap:12}}>
+          {/* ── BASIC FIELDS ── */}
+          <p style={{fontSize:13,fontWeight:700,color:C.navy,margin:'0 0 12px',display:'flex',alignItems:'center',gap:6}}>
+            <span style={{background:'#EDE9F7',borderRadius:'50%',width:22,height:22,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:'#5B3FA0'}}>1</span>
+            التفاصيل الأساسية
+          </p>
+          <div style={{display:'grid',gap:10,marginBottom:16}}>
+            <div>
+              <label style={lbl}>عنوان الدور *</label>
+              <input value={form.title} onChange={e=>set('title',e.target.value)} placeholder="مثال: موظفو استقبال لمعرض التقنية" style={inp}/>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               <div>
-                <label style={lbl}>عنوان الدور *</label>
-                <input value={form.title} onChange={e=>set('title',e.target.value)} placeholder="مثال: موظفو استقبال لمعرض التقنية" style={inp}/>
+                <label style={lbl}>نوع الدور *</label>
+                <select value={form.role_type} onChange={e=>set('role_type',e.target.value)} style={inp}>
+                  {ROLE_TYPES.map(r=><option key={r}>{r}</option>)}
+                </select>
               </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                <div><label style={lbl}>نوع الدور</label>
-                  <select value={form.role_type} onChange={e=>set('role_type',e.target.value)} style={inp}>
-                    {ROLE_TYPES.map(r=><option key={r}>{r}</option>)}
-                  </select>
-                </div>
-                <div><label style={lbl}>المدينة</label>
-                  <select value={form.city} onChange={e=>set('city',e.target.value)} style={inp}>
-                    {CITIES.map(c=><option key={c}>{c}</option>)}
-                  </select>
-                </div>
+              <div>
+                <label style={lbl}>المدينة *</label>
+                <select value={form.city} onChange={e=>set('city',e.target.value)} style={inp}>
+                  {CITIES.map(c=><option key={c}>{c}</option>)}
+                </select>
               </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
-                <div><label style={lbl}>تاريخ الفعالية *</label>
-                  <input type="date" value={form.event_date} onChange={e=>set('event_date',e.target.value)} style={inp}/>
-                </div>
-                <div><label style={lbl}>العدد المطلوب</label>
-                  <input type="number" min="1" value={form.workers_needed} onChange={e=>set('workers_needed',e.target.value)} style={inp}/>
-                </div>
-                <div><label style={lbl}>الأجر/يوم (ر.س) *</label>
-                  <input type="number" value={form.daily_rate} onChange={e=>set('daily_rate',e.target.value)} placeholder="350" style={inp}/>
-                </div>
+            </div>
+            <div>
+              <label style={lbl}>اسم المكان أو الحي</label>
+              <input value={form.location_name} onChange={e=>set('location_name',e.target.value)} placeholder="مثال: مركز الرياض التجاري، حي العليا" style={inp}/>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+              <div>
+                <label style={lbl}>تاريخ الفعالية *</label>
+                <input type="date" value={form.event_date} onChange={e=>set('event_date',e.target.value)} style={inp}/>
               </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-                <div><label style={lbl}>ساعات العمل</label>
-                  <input type="number" value={form.duration_hours} onChange={e=>set('duration_hours',e.target.value)} style={inp}/>
-                </div>
-                <div><label style={lbl}>الجنس المطلوب</label>
-                  <select value={form.gender_preference} onChange={e=>set('gender_preference',e.target.value)} style={inp}>
-                    <option value="any">بدون تفضيل</option>
-                    <option value="male">ذكر</option>
-                    <option value="female">أنثى</option>
-                  </select>
-                </div>
+              <div>
+                <label style={lbl}>عدد المطلوبين</label>
+                <input type="number" min="1" value={form.workers_needed} onChange={e=>set('workers_needed',e.target.value)} style={inp}/>
               </div>
-              {events.length>0&&<div><label style={lbl}>ربط بفعالية (اختياري)</label>
+              <div>
+                <label style={lbl}>الأجر (ر.س) *</label>
+                <input type="number" value={form.daily_rate} onChange={e=>set('daily_rate',e.target.value)} placeholder="350" style={inp}/>
+              </div>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              <div>
+                <label style={lbl}>ساعات العمل</label>
+                <input type="number" value={form.duration_hours} onChange={e=>set('duration_hours',e.target.value)} style={inp}/>
+              </div>
+              <div>
+                <label style={lbl}>الجنس المطلوب</label>
+                <select value={form.gender_preference} onChange={e=>set('gender_preference',e.target.value)} style={inp}>
+                  <option value="any">بدون تفضيل</option>
+                  <option value="male">ذكر</option>
+                  <option value="female">أنثى</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style={lbl}>وصف الدور</label>
+              <textarea value={form.description} onChange={e=>set('description',e.target.value)} rows={2} placeholder="ما الذي سيقوم به الكادر بالتحديد؟" style={{...inp,resize:'vertical'}}/>
+            </div>
+            {events.length>0&&(
+              <div>
+                <label style={lbl}>ربط بفعالية (اختياري)</label>
                 <select value={form.event_id} onChange={e=>set('event_id',e.target.value)} style={inp}>
                   <option value="">— بدون ربط —</option>
                   {events.map(ev=><option key={ev.id} value={ev.id}>{ev.title}</option>)}
                 </select>
-              </div>}
-              <div><label style={lbl}>تفاصيل إضافية</label>
-                <textarea value={form.description} onChange={e=>set('description',e.target.value)} rows={3} placeholder="متطلبات، ملابس موحدة..." style={{...inp,resize:'vertical'}}/>
               </div>
-              <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'10px 12px',background:'#F8F7FA',borderRadius:8,border:`1px solid ${C.border}`}}>
-                <input type="checkbox" checked={form.require_nafath} onChange={e=>set('require_nafath',e.target.checked)} style={{width:15,height:15,accentColor:C.navy}}/>
-                <span style={{fontSize:13,fontWeight:600,color:C.text}}>🛡️ يُشترط توثيق نفاذ</span>
-              </label>
+            )}
+            <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'8px 10px',background:'#EDE9F7',borderRadius:8}}>
+              <input type="checkbox" checked={form.require_nafath} onChange={e=>set('require_nafath',e.target.checked)} style={{width:15,height:15,accentColor:'#5B3FA0'}}/>
+              <div>
+                <p style={{margin:0,fontSize:13,fontWeight:600,color:'#5B3FA0'}}>🛡️ يُشترط التحقق بنفاذ</p>
+                <p style={{margin:0,fontSize:11,color:C.muted}}>للفعاليات ذات متطلبات أمنية عالية</p>
+              </div>
+            </label>
+          </div>
+
+          {/* ── PUBLIC PAGE TOGGLE ── */}
+          <div style={{borderTop:`1px solid ${C.border}`,paddingTop:16,marginBottom:16}}>
+            <div onClick={()=>setHasPublicPage(p=>!p)} style={{
+              display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer',
+              padding:'14px 16px',borderRadius:10,
+              background: hasPublicPage ? 'linear-gradient(135deg,#1E0A3C,#3D1A78)' : '#F8F7FA',
+              border: `2px solid ${hasPublicPage?C.orange:C.border}`,
+              transition:'all 0.2s'
+            }}>
+              <div>
+                <p style={{margin:0,fontSize:14,fontWeight:700,color:hasPublicPage?'#fff':C.navy}}>
+                  🌐 إنشاء صفحة توظيف عامة
+                </p>
+                <p style={{margin:'3px 0 0',fontSize:11,color:hasPublicPage?'rgba(255,255,255,0.7)':C.muted}}>
+                  صفحة مستقلة مع رابط قابل للمشاركة + نموذج تقديم مباشر
+                </p>
+              </div>
+              <div style={{
+                width:44,height:24,borderRadius:50,
+                background: hasPublicPage?C.orange:'#DBDAE3',
+                position:'relative',transition:'background 0.2s',flexShrink:0
+              }}>
+                <div style={{
+                  position:'absolute',top:2,width:20,height:20,borderRadius:'50%',background:'#fff',
+                  transition:'right 0.2s, left 0.2s',
+                  right: hasPublicPage?2:'auto', left: hasPublicPage?'auto':2,
+                  boxShadow:'0 1px 4px rgba(0,0,0,0.2)'
+                }}/>
+              </div>
             </div>
-          )}
 
-          {/* ── PAGE TAB ── */}
-          {step==='page' && (
-            <div style={{display:'grid',gap:14}}>
-              {/* Toggle */}
-              <div style={{background: form.has_public_page?'#EAF7E0':'#F8F7FA', border:`2px solid ${form.has_public_page?C.green:C.border}`, borderRadius:10, padding:'14px 16px'}}>
-                <label style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
-                  <div style={{position:'relative',width:42,height:24,background:form.has_public_page?C.green:'#DBDAE3',borderRadius:50,transition:'background 0.2s',flexShrink:0}} onClick={()=>set('has_public_page',!form.has_public_page)}>
-                    <div style={{position:'absolute',top:2,right:form.has_public_page?2:18,width:20,height:20,background:'#fff',borderRadius:'50%',transition:'right 0.2s',boxShadow:'0 1px 4px rgba(0,0,0,0.2)'}}/>
-                  </div>
-                  <div>
-                    <p style={{fontWeight:700,color:form.has_public_page?C.green:C.navy,margin:0,fontSize:14}}>
-                      {form.has_public_page?'✅ الصفحة العامة مفعّلة':'إنشاء صفحة عامة للتقديم'}
-                    </p>
-                    <p style={{fontSize:12,color:C.muted,margin:'2px 0 0'}}>
-                      {form.has_public_page?'سيتم إنشاء رابط يمكن مشاركته فوراً':'خيار اختياري — يمنحك رابط مشاركة مباشر'}
-                    </p>
-                  </div>
-                </label>
-              </div>
+            {hasPublicPage && (
+              <div style={{marginTop:16,display:'grid',gap:14}}>
+                <p style={{fontSize:13,fontWeight:700,color:C.navy,margin:'0 0 4px',display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{background:'#EDE9F7',borderRadius:'50%',width:22,height:22,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:'#5B3FA0'}}>2</span>
+                  تفاصيل الصفحة العامة
+                </p>
 
-              {form.has_public_page && (<>
-                {/* Cover Image */}
+                {/* Cover image */}
                 <div>
-                  <label style={lbl}>صورة الغلاف (اختياري)</label>
+                  <label style={lbl}>صورة الطلب</label>
                   <input ref={fileRef} type="file" accept="image/*" onChange={handleImage} style={{display:'none'}}/>
                   {coverPreview ? (
-                    <div style={{position:'relative',borderRadius:10,overflow:'hidden'}}>
-                      <img src={coverPreview} alt="" style={{width:'100%',height:160,objectFit:'cover',display:'block'}}/>
-                      {imageUploading&&<div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.4)',display:'flex',alignItems:'center',justifyContent:'center'}}><span style={{color:'#fff',fontWeight:700}}>⏳ رفع الصورة...</span></div>}
-                      <button onClick={()=>{setCoverPreview(null);setCoverUrl('')}} style={{position:'absolute',top:8,left:8,background:'rgba(220,38,38,0.9)',color:'#fff',border:'none',borderRadius:6,padding:'4px 10px',fontSize:11,cursor:'pointer'}}>حذف</button>
+                    <div style={{position:'relative'}}>
+                      <img src={coverPreview} alt="cover" style={{width:'100%',height:160,objectFit:'cover',borderRadius:8,display:'block'}}/>
+                      <div style={{position:'absolute',top:8,left:8,display:'flex',gap:6}}>
+                        <button onClick={()=>fileRef.current?.click()} style={{background:'rgba(0,0,0,0.7)',color:'#fff',border:'none',borderRadius:6,padding:'5px 10px',fontSize:11,cursor:'pointer'}}>
+                          {imageUploading?'⏳...':'✏️ تغيير'}
+                        </button>
+                        <button onClick={()=>{setCoverPreview(null);setCoverUrl('')}} style={{background:'rgba(220,38,38,0.8)',color:'#fff',border:'none',borderRadius:6,padding:'5px 8px',fontSize:11,cursor:'pointer'}}>✕</button>
+                      </div>
                     </div>
                   ) : (
-                    <div onClick={()=>fileRef.current?.click()} style={{border:`2px dashed ${C.border}`,borderRadius:10,padding:'24px',textAlign:'center',cursor:'pointer',background:'#F3F0F8'}}>
+                    <div onClick={()=>fileRef.current?.click()} style={{padding:'24px',textAlign:'center',cursor:'pointer',background:'#F3F0F8',border:'2px dashed #B4A7D6',borderRadius:8}}>
                       <div style={{fontSize:28,marginBottom:6}}>🖼️</div>
-                      <p style={{fontSize:13,color:C.navy,fontWeight:600,margin:'0 0 3px'}}>اضغط لرفع صورة</p>
-                      <p style={{fontSize:11,color:C.muted,margin:0}}>PNG أو JPG — يوصى بـ 1200×630</p>
+                      <p style={{fontWeight:600,color:C.navy,margin:'0 0 3px',fontSize:13}}>اضغط لرفع صورة الطلب</p>
+                      <p style={{fontSize:11,color:C.muted,margin:0}}>PNG أو JPG — تظهر في رابط المشاركة</p>
                     </div>
                   )}
                 </div>
 
-                <div><label style={lbl}>اسم الجهة / المنظمة</label>
-                  <input value={form.org_name} onChange={e=>set('org_name',e.target.value)} placeholder="اسم الشركة أو المنظمة" style={inp}/>
-                </div>
-                <div><label style={lbl}>اسم موقع الفعالية</label>
-                  <input value={form.location_name} onChange={e=>set('location_name',e.target.value)} placeholder="مثال: قاعة الملك فهد، شمال الرياض" style={inp}/>
-                </div>
+                {/* Org name */}
                 <div>
-                  <label style={lbl}>المتطلبات</label>
-                  <textarea value={form.requirements} onChange={e=>set('requirements',e.target.value)} rows={3} placeholder="المؤهلات، المهارات، الخبرات المطلوبة..." style={{...inp,resize:'vertical'}}/>
+                  <label style={lbl}>اسم المنظمة / الجهة (للصفحة العامة)</label>
+                  <input value={orgName} onChange={e=>setOrgName(e.target.value)} placeholder="مثال: شركة الأحداث الكبرى" style={inp}/>
                 </div>
 
                 {/* Highlights */}
                 <div>
-                  <label style={lbl}>✨ أبرز مميزات الوظيفة</label>
-                  {form.highlights.map((h,i)=>(
-                    <div key={i} style={{display:'flex',gap:6,marginBottom:6,alignItems:'center'}}>
-                      <span style={{fontSize:13,flex:1,color:C.text,background:'#F8F7FA',padding:'6px 10px',borderRadius:6,border:`1px solid ${C.border}`}}>{h}</span>
-                      <button onClick={()=>set('highlights',form.highlights.filter((_,j)=>j!==i))} style={{background:'none',border:'none',color:'#DC2626',fontSize:16,cursor:'pointer',padding:'0 4px'}}>✕</button>
+                  <label style={{...lbl,marginBottom:8}}>✨ مميزات العمل <span style={{color:C.muted,fontWeight:400}}>(تظهر كبطاقات)</span></label>
+                  {highlights.map((h,i)=>(
+                    <div key={i} style={{display:'flex',gap:6,marginBottom:6}}>
+                      <input value={h} onChange={e=>updateHL(i,e.target.value)} placeholder={`ميزة ${i+1}... مثال: وجبة مجانية`} style={{...inp,flex:1}}/>
+                      {highlights.length>1 && <button onClick={()=>removeHL(i)} style={{background:'none',border:'none',cursor:'pointer',color:'#DC2626',fontSize:16,padding:'0 4px'}}>✕</button>}
                     </div>
                   ))}
-                  <div style={{display:'flex',gap:8}}>
-                    <input value={newHighlight} onChange={e=>setNewHighlight(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addHighlight()} placeholder="مثال: بيئة عمل احترافية" style={{...inp,flex:1}}/>
-                    <button onClick={addHighlight} style={{padding:'8px 14px',background:C.navy,border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>+ إضافة</button>
-                  </div>
+                  {highlights.length < 6 && (
+                    <button onClick={addHighlight} style={{width:'100%',padding:'7px',border:`2px dashed ${C.border}`,borderRadius:8,background:'none',cursor:'pointer',color:C.orange,fontWeight:600,fontSize:12}}>
+                      + إضافة ميزة
+                    </button>
+                  )}
                 </div>
 
                 {/* Benefits */}
                 <div>
-                  <label style={lbl}>🎁 المزايا والفوائد</label>
-                  {form.benefits.map((b,i)=>(
-                    <div key={i} style={{display:'flex',gap:6,marginBottom:6,alignItems:'center'}}>
-                      <span style={{fontSize:13,flex:1,color:C.text,background:'#F0FAF0',padding:'6px 10px',borderRadius:6,border:'1px solid #C3E6C3'}}>{b}</span>
-                      <button onClick={()=>set('benefits',form.benefits.filter((_,j)=>j!==i))} style={{background:'none',border:'none',color:'#DC2626',fontSize:16,cursor:'pointer',padding:'0 4px'}}>✕</button>
+                  <label style={{...lbl,marginBottom:8}}>🎁 ما تحصل عليه <span style={{color:C.muted,fontWeight:400}}>(تظهر كـ tags)</span></label>
+                  {benefits.map((b,i)=>(
+                    <div key={i} style={{display:'flex',gap:6,marginBottom:6}}>
+                      <input value={b} onChange={e=>updateBN(i,e.target.value)} placeholder={`مثال: شهادة خبرة`} style={{...inp,flex:1}}/>
+                      {benefits.length>1 && <button onClick={()=>removeBN(i)} style={{background:'none',border:'none',cursor:'pointer',color:'#DC2626',fontSize:16,padding:'0 4px'}}>✕</button>}
                     </div>
                   ))}
-                  <div style={{display:'flex',gap:8}}>
-                    <input value={newBenefit} onChange={e=>setNewBenefit(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addBenefit()} placeholder="مثال: وجبة مجانية، بدل مواصلات" style={{...inp,flex:1}}/>
-                    <button onClick={addBenefit} style={{padding:'8px 14px',background:C.green,border:'none',borderRadius:8,color:'#fff',fontWeight:700,fontSize:12,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>+ إضافة</button>
-                  </div>
+                  {benefits.length < 6 && (
+                    <button onClick={addBenefit} style={{width:'100%',padding:'7px',border:`2px dashed ${C.border}`,borderRadius:8,background:'none',cursor:'pointer',color:C.orange,fontWeight:600,fontSize:12}}>
+                      + إضافة
+                    </button>
+                  )}
                 </div>
-              </>)}
-            </div>
-          )}
-        </div>
 
-        {/* Footer */}
-        <div style={{padding:'14px 20px',borderTop:`1px solid ${C.border}`,display:'flex',gap:10}}>
-          <button onClick={onClose} style={{flex:1,padding:'10px',border:`1px solid ${C.border}`,borderRadius:8,background:C.card,cursor:'pointer',fontWeight:600,fontSize:13,fontFamily:'inherit'}}>إلغاء</button>
-          <button onClick={save} disabled={saving} style={{flex:2,padding:'10px',border:'none',borderRadius:8,background:C.orange,color:'#fff',cursor:saving?'wait':'pointer',fontWeight:700,fontSize:13,fontFamily:'inherit'}}>
-            {saving?'⏳ جاري النشر...':'🚀 نشر الطلب'}
-          </button>
+                {/* Requirements */}
+                <div>
+                  <label style={lbl}>📝 المتطلبات والشروط</label>
+                  <textarea value={requirements} onChange={e=>setRequirements(e.target.value)} rows={3}
+                    placeholder="مثال: - اللباقة والتعامل مع الجمهور&#10;- إجادة اللغة الإنجليزية&#10;- الحضور قبل ساعة من بدء الفعالية"
+                    style={{...inp,resize:'vertical'}}/>
+                </div>
+
+                {/* Preview note */}
+                <div style={{background:'#EAF7E0',borderRadius:8,padding:'10px 12px',border:'1px solid #C3E6C3',display:'flex',gap:8}}>
+                  <span style={{fontSize:14}}>✅</span>
+                  <p style={{margin:0,fontSize:12,color:'#1A5A00',lineHeight:1.5}}>
+                    بعد النشر ستجد رابطاً في بطاقة الطلب يمكن مشاركته مباشرة عبر واتساب أو نسخه.
+                    <br/>الرابط سيكون: <strong>evento.app/jobs/your-slug</strong>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── ACTIONS ── */}
+          <div style={{display:'flex',gap:10}}>
+            <button onClick={onClose} style={{flex:1,padding:'11px',border:`1px solid ${C.border}`,borderRadius:8,background:C.bg,cursor:'pointer',fontWeight:600,fontSize:13,fontFamily:'inherit',color:C.text}}>إلغاء</button>
+            <button onClick={save} disabled={saving||imageUploading} style={{flex:2,padding:'11px',border:'none',borderRadius:8,background:saving?'#DBDAE3':C.orange,color:'#fff',cursor:saving?'not-allowed':'pointer',fontWeight:700,fontSize:13,fontFamily:'inherit'}}>
+              {imageUploading?'⏫ رفع الصورة...':saving?'⏳ جاري النشر...':hasPublicPage?'🌐 نشر مع صفحة عامة':'🚀 نشر الطلب'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-// ─── SHARE TOAST ──────────────────────────────────────────────────────
-function ShareToast({req, onClose}:{req:Request;onClose:()=>void}) {
-  const url = `${typeof window!=='undefined'?window.location.origin:''}/jobs/${req.slug}`
-  const wa  = `https://wa.me/?text=${encodeURIComponent('فرصة توظيف: '+req.title+'\n📍 '+req.city+' · 💰 '+req.daily_rate+' ر.س/يوم\n📅 '+req.event_date+'\n\nقدّم الآن:\n'+url)}`
-  return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={onClose}>
-      <div style={{background:C.card,borderRadius:16,padding:24,maxWidth:400,width:'100%',direction:'rtl'}} onClick={e=>e.stopPropagation()}>
-        <div style={{textAlign:'center',marginBottom:16}}>
-          <div style={{fontSize:40,marginBottom:8}}>🎉</div>
-          <h3 style={{fontSize:18,fontWeight:800,color:C.navy,margin:'0 0 4px'}}>تم نشر الطلب بنجاح!</h3>
-          <p style={{fontSize:13,color:C.muted,margin:0}}>الرابط جاهز للمشاركة الآن</p>
-        </div>
-        <div style={{background:'#F8F7FA',borderRadius:8,padding:'10px 12px',marginBottom:14,display:'flex',gap:8,alignItems:'center',border:`1px solid ${C.border}`}}>
-          <span style={{fontSize:12,color:C.text,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:'monospace'}}>{url}</span>
-          <button onClick={()=>navigator.clipboard?.writeText(url)} style={{padding:'4px 10px',background:C.navy,border:'none',borderRadius:5,color:'#fff',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>نسخ</button>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <a href={wa} target="_blank" rel="noopener" style={{
-            flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:6,
-            padding:'11px',background:'#25D366',border:'none',borderRadius:8,
-            color:'#fff',fontWeight:700,fontSize:13,textDecoration:'none'
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            مشاركة واتساب
-          </a>
-          <button onClick={onClose} style={{flex:1,padding:'11px',border:`1px solid ${C.border}`,borderRadius:8,background:C.card,cursor:'pointer',fontWeight:600,fontSize:13,fontFamily:'inherit',color:C.text}}>إغلاق</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Main Page ─────────────────────────────────────────────────────────
 export default function StaffingPage() {
   const sb = useMemo(()=>createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!),[])
   const [tab, setTab]         = useState<'requests'|'workers'>('requests')
