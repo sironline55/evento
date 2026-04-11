@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   const sb = createClient(SB_URL, SB_KEY)
 
   // Get registration + event
-  const { data: reg } = await sb.from('registrations').select('*, events(name,start_date,location)').eq('id', registrationId).single()
+  const { data: reg } = await sb.from('registrations').select('*, events(title,start_date,location)').eq('id', registrationId).single()
   if (!reg) return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
 
   const sendTo = email || reg.attendee_email || reg.email
@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
   const result = await sendTicketEmail({
     to: sendTo,
     name: reg.attendee_name || 'الحضور الكريم',
-    eventName: event?.name || 'الفعالية',
+    eventName: event?.title || 'الفعالية',
     eventDate,
     eventLocation: event?.location || '—',
     ticketCode: reg.qr_code,
