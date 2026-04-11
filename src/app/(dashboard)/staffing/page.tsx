@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -63,6 +64,7 @@ function AppsDrawer({ request, onClose }: {request:Request;onClose:()=>void}) {
 
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:100,display:'flex',justifyContent:'flex-end'}} onClick={onClose}>
+      <MobilePageHeader title="الكوادر" />
       <div style={{width:'min(480px,100%)',background:C.card,height:'100%',overflowY:'auto',direction:'rtl'}} onClick={e=>e.stopPropagation()}>
         <div style={{padding:'18px 18px 14px',borderBottom:`1px solid ${C.border}`,position:'sticky',top:0,background:C.card,zIndex:1}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
