@@ -4,6 +4,7 @@ import { useState, useRef, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -70,6 +71,7 @@ function EventPreview({ title, subtitle, category, subcategory, startDate, start
       border:isMobile?'8px solid #1C1C2E':`1px solid ${C.border}`,
       boxShadow:isMobile?'0 20px 60px rgba(0,0,0,0.25)':'0 4px 20px rgba(0,0,0,0.08)',
       direction:'rtl', maxHeight:620, overflowY:'auto' }}>
+      <MobilePageHeader title="إنشاء فعالية" back="/events"/>
       <div style={{background:C.card,padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:`1px solid ${C.border}`}}>
         <span style={{fontSize:20,color:C.orange}}>🎪</span>
         <div style={{display:'flex',gap:10}}><span style={{color:'#3D7FE8',fontSize:16}}>↑</span><span style={{color:C.muted,fontSize:16}}>♡</span></div>
