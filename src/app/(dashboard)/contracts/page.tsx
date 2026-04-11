@@ -188,6 +188,11 @@ export default function ContractsPage() {
                 )}
 
                 {/* Actions */}
+                {contract.status === 'pending_payment' && (
+                    <a href={`/escrow/${contract.id}`} style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'12px 20px', background:'#F05537', border:'none', borderRadius:10, color:'#fff', fontWeight:800, fontSize:14, textDecoration:'none', marginBottom:12 }}>
+                      🔒 ادفع {contract.agreed_price?.toLocaleString()} ريال في Escrow
+                    </a>
+                )}
                 <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                   {contract.status === 'content_submitted' && (
                     <>
