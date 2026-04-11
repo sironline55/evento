@@ -395,7 +395,6 @@ export default function AttendeesPage() {
             })}
           </>
         )}
-            </div>{/* end desktop table */}
         {/* Pagination */}
         <Pagination total={filtered.length} page={page} perPage={PER_PAGE} onPage={setPage}/>
       </div>
