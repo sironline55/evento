@@ -3,6 +3,8 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
+import Pagination from '@/components/ui/Pagination'
+
 
 const C = {
   navy:'#1E0A3C', orange:'#F05537', text:'#39364F',
@@ -33,6 +35,8 @@ export default function AttendeesPage() {
   const [eventFilter, setEventFilter] = useState('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkLoading, setBulkLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const PER_PAGE = 50
   const [toast,    setToast]    = useState<{msg:string;type:string}|null>(null)
 
   function showToast(msg: string, type = 'success') {
@@ -134,6 +138,12 @@ export default function AttendeesPage() {
     regs.forEach(r => { c[r.status] = (c[r.status] || 0) + 1 })
     return c
   }, [regs])
+
+  const paginated = useMemo(() =>
+    filtered.slice((page-1)*PER_PAGE, page*PER_PAGE), [filtered, page, PER_PAGE])
+
+  // Reset page on filter change
+  const prevFilter = useMemo(() => { setPage(1); return filter }, [filter, search, eventFilter])
 
   const toastColors: Record<string,{bg:string;color:string;border:string}> = {
     success: { bg:'#EAF7E0', color:'#166534', border:'#9DE07B' },
@@ -253,7 +263,7 @@ export default function AttendeesPage() {
             </div>
 
             {/* Rows */}
-            {filtered.map((r, i) => {
+            {paginated.map((r, i) => {
               const s = STATUS_CONFIG[r.status] || STATUS_CONFIG.registered
               const isSelected = selected.has(r.id)
               return (
@@ -318,6 +328,8 @@ export default function AttendeesPage() {
             })}
           </>
         )}
+        {/* Pagination */}
+        <Pagination total={filtered.length} page={page} perPage={PER_PAGE} onPage={setPage}/>
       </div>
     </div>
   )
