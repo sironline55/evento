@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useMemo } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import MobilePageHeader from '@/components/layout/MobilePageHeader'
 
 const C = { navy:'#1E0A3C', orange:'#F05537', muted:'#6F7287', border:'#DBDAE3', card:'#FFFFFF' }
 
@@ -89,6 +90,7 @@ export default function RemindersPage() {
 
   return (
     <div style={{ direction:'rtl', fontFamily:'Tajawal,sans-serif', padding:'24px 20px', maxWidth:960, margin:'0 auto' }}>
+      <MobilePageHeader title="التذكيرات" />
 
       {/* Header */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:24, flexWrap:'wrap', gap:12 }}>
