@@ -16,6 +16,8 @@ export default function RegistrationPage() {
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone]       = useState(false)
   const [ticketCode, setTicketCode] = useState('')
+  const [regCount,   setRegCount]   = useState(0)
+  const [isFull,     setIsFull]     = useState(false)
   const [form, setForm]       = useState({ guest_name:'', guest_email:'', guest_phone:'', notes:'' })
 
   // Coupon state
@@ -27,7 +29,7 @@ export default function RegistrationPage() {
   useEffect(() => {
     if (!id) return
     sb.from('events')
-      .select('id,title,start_date,location,capacity,price_from,category_icon,org_id,status,organizations(name,logo_url,accent_color)')
+      .select('id,title,start_date,location,capacity,price_from,category_icon,org_id,status,waitlist_enabled,organizations(name,logo_url,accent_color)')
       .eq('id', id).single()
       .then(({ data }) => { setEv(data); setLoading(false) })
   }, [id])
@@ -121,7 +123,7 @@ export default function RegistrationPage() {
     <div style={{ minHeight:'100vh', background:`linear-gradient(135deg,${C.navy},#3D1A78)`, display:'flex', alignItems:'center', justifyContent:'center', direction:'rtl', fontFamily:'Tajawal,sans-serif', padding:16 }}>
       <div style={{ background:'#fff', borderRadius:20, padding:36, maxWidth:400, width:'100%', textAlign:'center' }}>
         <div style={{ fontSize:56, marginBottom:12 }}>🎉</div>
-        <h2 style={{ fontSize:22, fontWeight:800, color:C.navy, margin:'0 0 8px' }}>تم التسجيل بنجاح!</h2>
+        <h2 style={{ fontSize:22, fontWeight:800, color:C.navy, margin:'0 0 8px' }}>{isFull && ev?.waitlist_enabled ? 'تم إضافتك لقائمة الانتظار!' : 'تم التسجيل بنجاح!'}</h2>
         <p style={{ color:C.muted, fontSize:14, margin:'0 0 20px' }}>مرحباً {form.guest_name}، تم تسجيلك في {ev.title}</p>
         {coupon && (
           <div style={{ background:'#EAF7E0', border:'1px solid #9DE07B', borderRadius:10, padding:'10px 16px', marginBottom:14 }}>
@@ -272,12 +274,25 @@ export default function RegistrationPage() {
               </div>
             )}
 
-            <button type="submit" disabled={submitting} style={{
+            {/* Capacity / Waitlist notice */}
+            {ev?.capacity && (
+              <div style={{ padding:'10px 14px', borderRadius:10, background: isFull?'#FFF8E8':'#EAF7E0', border:`1px solid ${isFull?'#F5D56B':'#9DE07B'}`, fontSize:13 }}>
+                {isFull ? (
+                  ev?.waitlist_enabled
+                    ? <span style={{ color:'#854F0B', fontWeight:600 }}>⏳ اكتملت المقاعد — سيتم إضافتك لقائمة الانتظار وإشعارك عند توفر مقعد</span>
+                    : <span style={{ color:'#DC2626', fontWeight:600 }}>🚫 اكتملت المقاعد — التسجيل مغلق</span>
+                ) : (
+                  <span style={{ color:'#166534', fontWeight:600 }}>✅ {ev.capacity - regCount} مقعد متبقي من {ev.capacity}</span>
+                )}
+              </div>
+            )}
+
+            <button type="submit" disabled={submitting || (isFull && !ev?.waitlist_enabled)} style={{
               padding:'14px', background:submitting?C.muted:accent, color:'#fff',
               borderRadius:12, border:'none', fontSize:16, fontWeight:700,
               cursor:submitting?'not-allowed':'pointer', fontFamily:'inherit'
             }}>
-              {submitting ? 'جاري التسجيل...' : '🎟 تأكيد التسجيل'}
+              {submitting ? 'جاري التسجيل...' : isFull && ev?.waitlist_enabled ? '⏳ الانضمام لقائمة الانتظار' : isFull ? 'المقاعد ممتلئة' : '🎟 تأكيد التسجيل'}
             </button>
           </div>
 
