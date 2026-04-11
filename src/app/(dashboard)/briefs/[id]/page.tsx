@@ -94,7 +94,7 @@ export default function BriefDetailPage() {
   }
 
   if (loading) return <div style={{ padding:60, textAlign:'center', color:C.muted, direction:'rtl' }}>⏳</div>
-  if (!brief) return <div style={{ padding:60, textAlign:'center', direction:'rtl' }}><h2>البريف غير موجود</h2><a href="/dashboard/briefs">← العودة</a></div>
+  if (!brief) return <div style={{ padding:60, textAlign:'center', direction:'rtl' }}><h2>البريف غير موجود</h2><a href="/briefs">← العودة</a></div>
 
   const pending = proposals.filter(p => p.status === 'pending')
   const accepted = proposals.filter(p => p.status === 'accepted')
@@ -102,7 +102,7 @@ export default function BriefDetailPage() {
 
   return (
     <div style={{ padding:'28px 24px', direction:'rtl', maxWidth:900, margin:'0 auto' }}>
-      <a href="/dashboard/briefs" style={{ color:C.muted, fontSize:13, textDecoration:'none', display:'block', marginBottom:16 }}>← الرجوع للبريفات</a>
+      <a href="/briefs" style={{ color:C.muted, fontSize:13, textDecoration:'none', display:'block', marginBottom:16 }}>← الرجوع للبريفات</a>
 
       {/* Brief summary */}
       <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:14, padding:24, marginBottom:20 }}>
@@ -205,7 +205,7 @@ export default function BriefDetailPage() {
                   {isAccepted && (
                     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                       <span style={{ fontSize:13, color:C.green, fontWeight:700 }}>✅ تم القبول — في انتظار الدفع لتفعيل العقد</span>
-                      <a href="/dashboard/contracts" style={{ fontSize:12, color:C.orange, fontWeight:600, textDecoration:'none' }}>عرض العقد ←</a>
+                      <a href="/contracts" style={{ fontSize:12, color:C.orange, fontWeight:600, textDecoration:'none' }}>عرض العقد ←</a>
                     </div>
                   )}
                 </div>
