@@ -180,10 +180,14 @@ export default function ContractsPage() {
 
                 {/* Escrow badge */}
                 {contract.status === 'pending_payment' && (
-                  <div style={{ background:'#EAF7E0', border:'1px solid #C3E6C3', borderRadius:8, padding:'10px 14px', marginBottom:14 }}>
-                    <p style={{ color:'#1A5A00', fontSize:13, fontWeight:600, margin:0 }}>
-                      🔒 المبلغ محفوظ في Escrow — سيُفرج عنه بعد موافقتك على المحتوى
-                    </p>
+                  <div style={{ background:'#FFF8E8', border:'1px solid #F5C842', borderRadius:8, padding:'12px 16px', marginBottom:14, display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
+                    <div>
+                      <p style={{ color:'#7A5000', fontSize:13, fontWeight:700, margin:'0 0 2px' }}>💳 في انتظار الدفع لتفعيل العقد</p>
+                      <p style={{ color:'#B07000', fontSize:12, margin:0 }}>ادفع المبلغ في Escrow حتى يبدأ المؤثر بالعمل</p>
+                    </div>
+                    <a href={`/escrow/${contract.id}`} style={{ padding:'10px 18px', background:'#F05537', borderRadius:8, color:'#fff', fontWeight:700, fontSize:13, textDecoration:'none', whiteSpace:'nowrap', flexShrink:0 }}>
+                      ادفع الآن ←
+                    </a>
                   </div>
                 )}
 
