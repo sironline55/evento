@@ -12,7 +12,7 @@ const NAV = [
   { href: '/analytics', label: 'التقارير',    icon: BarChart2  },
   { href: '/staffing',  label: 'الكوادر',     icon: Briefcase  },
   { href: '/influencers', label: 'المؤثرون',   icon: Users      },
-  { href: '/dashboard/briefs', label: 'الحملات',      icon: Megaphone  },
+  { href: '/briefs', label: 'الحملات',      icon: Megaphone  },
   { href: '/scanner',   label: 'الماسح',      icon: ScanLine   },
   { href: '/coupons',   label: 'الكوبونات',   icon: Tag        },
 ]
