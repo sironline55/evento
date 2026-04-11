@@ -34,6 +34,7 @@ export default function InfluencerProfile() {
   const [loading, setLoading] = useState(true)
   const [selectedPkg, setSelectedPkg] = useState('price_standard')
   const [showBriefModal, setShowBriefModal] = useState(false)
+  const [reviews, setReviews] = useState<any[]>([])
 
   useEffect(() => {
     if (!id) return
@@ -43,6 +44,11 @@ export default function InfluencerProfile() {
     .then(r => r.json())
     .then(d => { setInf(d?.[0] || null); setLoading(false) })
     .catch(() => setLoading(false))
+    // Fetch reviews
+    const infId = Array.isArray(id) ? id[0] : id
+    fetch(`${SB_URL}/rest/v1/campaign_reviews?influencer_id=eq.${infId}&select=rating,review_text,created_at,organizations(name)&order=created_at.desc&limit=10`, {
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}` }
+    }).then(r=>r.json()).then(d=>setReviews(Array.isArray(d)?d:[])).catch(()=>{})
   }, [id])
 
   if (loading) return <div style={{ padding:80, textAlign:'center', color:C.muted, direction:'rtl' }}>⏳ جاري التحميل...</div>
@@ -243,6 +249,32 @@ export default function InfluencerProfile() {
               fontWeight:800, fontSize:15, textAlign:'center', textDecoration:'none', marginBottom:10
             }}>إنشاء بريف جديد ←</a>
             <button onClick={() => setShowBriefModal(false)} style={{ width:'100%', padding:'11px', border:`1px solid ${C.border}`, borderRadius:10, background:'none', color:C.text, fontWeight:600, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>إلغاء</button>
+          </div>
+        </div>
+      )}
+
+      {/* Reviews */}
+      {reviews.length > 0 && (
+        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:'20px 22px',marginTop:16}}>
+          <h3 style={{fontSize:15,fontWeight:700,color:C.navy,margin:'0 0 14px'}}>
+            ⭐ التقييمات ({reviews.length})
+          </h3>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {reviews.map((r:any,i:number)=>(
+              <div key={i} style={{padding:'12px 14px',background:'#F8F7FA',borderRadius:10}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                  <div style={{display:'flex',gap:2}}>
+                    {[1,2,3,4,5].map(n=>(
+                      <span key={n} style={{fontSize:16,filter:n<=r.rating?'none':'grayscale(1) opacity(.3)'}}>⭐</span>
+                    ))}
+                  </div>
+                  <span style={{fontSize:11,color:C.muted}}>
+                    {(r.organizations as any)?.name||'منظم'} · {new Date(r.created_at).toLocaleDateString('ar-SA',{month:'short',year:'numeric'})}
+                  </span>
+                </div>
+                {r.review_text&&<p style={{fontSize:13,color:C.text,margin:0,lineHeight:1.6}}>{r.review_text}</p>}
+              </div>
+            ))}
           </div>
         </div>
       )}
